@@ -42,7 +42,7 @@
       },
     },
     "apps/web": {
-      "name": "web",
+      "name": "@entwine/web",
       "version": "0.0.0",
       "dependencies": {
         "@base-ui/react": "^1.0.0",
@@ -54,7 +54,7 @@
         "@orpc/tanstack-query": "^1.12.2",
         "@tailwindcss/vite": "^4.0.15",
         "@tanstack/react-form": "^1.12.3",
-        "@tanstack/react-query": "^5.90.12",
+        "@tanstack/react-query": "catalog:",
         "@tanstack/react-router": "^1.141.1",
         "better-auth": "catalog:",
         "class-variance-authority": "^0.7.1",
@@ -105,6 +105,19 @@
         "typescript": "catalog:",
       },
     },
+    "packages/hono-react-query": {
+      "name": "@entwine/hono-react-query",
+      "version": "0.0.0",
+      "dependencies": {
+        "@tanstack/react-query": "catalog:",
+        "hono": "catalog:",
+      },
+      "devDependencies": {
+        "@entwine/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
   },
   "catalog": {
     "@libsql/client": "0.15.15",
@@ -112,6 +125,7 @@
     "@orpc/openapi": "^1.12.2",
     "@orpc/server": "^1.12.2",
     "@orpc/zod": "^1.12.2",
+    "@tanstack/react-query": "^5.90.12",
     "@types/bun": "^1.3.4",
     "@typescript/native-preview": "^7.0.0-dev.20260122.3",
     "better-auth": "^1.4.9",
@@ -232,7 +246,11 @@
 
     "@entwine/env": ["@entwine/env@workspace:packages/env"],
 
+    "@entwine/hono-react-query": ["@entwine/hono-react-query@workspace:packages/hono-react-query"],
+
     "@entwine/server": ["@entwine/server@workspace:apps/server"],
+
+    "@entwine/web": ["@entwine/web@workspace:apps/web"],
 
     "@esbuild-kit/core-utils": ["@esbuild-kit/core-utils@3.3.2", "", { "dependencies": { "esbuild": "~0.18.20", "source-map-support": "^0.5.21" } }, "sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ=="],
 
@@ -1307,8 +1325,6 @@
     "vary": ["vary@1.1.2", "", {}, "sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg=="],
 
     "vite": ["vite@6.4.1", "", { "dependencies": { "esbuild": "^0.25.0", "fdir": "^6.4.4", "picomatch": "^4.0.2", "postcss": "^8.5.3", "rollup": "^4.34.9", "tinyglobby": "^0.2.13" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0", "jiti": ">=1.21.0", "less": "*", "lightningcss": "^1.21.0", "sass": "*", "sass-embedded": "*", "stylus": "*", "sugarss": "*", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "jiti", "less", "lightningcss", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-+Oxm7q9hDoLMyJOYfUYBuHQo+dkAloi33apOPP56pzj+vsdJDzr+j1NISE5pyaAuKL4A3UD34qd0lx5+kfKp2g=="],
-
-    "web": ["web@workspace:apps/web"],
 
     "web-streams-polyfill": ["web-streams-polyfill@3.3.3", "", {}, "sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw=="],
 
