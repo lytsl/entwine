@@ -1,4 +1,4 @@
-import type { AppRouterClient } from "@entwine/api/routers/index";
+import type { AppRouterClient } from "@entwine/server";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { createORPCClient } from "@orpc/client";

@@ -1,5 +1,5 @@
 {
-  "name": "web",
+  "name": "@entwine/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,6 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
-    "@entwine/api": "workspace:*",
-    "@entwine/auth": "workspace:*",
     "@entwine/env": "workspace:*",
     "@hookform/resolvers": "^5.1.1",
     "@libsql/client": "catalog:",
@@ -41,6 +39,7 @@
   },
   "devDependencies": {
     "@entwine/config": "workspace:*",
+    "@entwine/server": "workspace:*",
     "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-router-devtools": "^1.141.1",
     "@tanstack/router-plugin": "^1.141.1",

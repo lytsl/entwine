@@ -1,5 +1,5 @@
-import { db } from "@entwine/db";
-import * as schema from "@entwine/db/schema/auth";
+import { db } from "@/db";
+import * as schema from "@/db/schema/auth";
 import { env } from "@entwine/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";

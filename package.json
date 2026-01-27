@@ -19,23 +19,25 @@
       "@libsql/client": "0.15.15",
       "libsql": "0.5.22",
       "@orpc/client": "^1.12.2",
-      "drizzle-orm": "^0.45.1"
+      "@typescript/native-preview": "^7.0.0-dev.20260122.3"
     }
   },
   "type": "module",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
+    "build:types": "turbo -F @entwine/server build:types",
     "check-types": "turbo check-types",
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F @entwine/db db:push",
-    "db:studio": "turbo -F @entwine/db db:studio",
-    "db:generate": "turbo -F @entwine/db db:generate",
-    "db:migrate": "turbo -F @entwine/db db:migrate",
-    "db:local": "turbo -F @entwine/db db:local",
-    "check": "biome check --write ."
+    "dev:server": "turbo -F @entwine/server dev",
+    "db:push": "turbo -F @entwine/server db:push",
+    "db:studio": "turbo -F @entwine/server db:studio",
+    "db:generate": "turbo -F @entwine/server db:generate",
+    "db:migrate": "turbo -F @entwine/server db:migrate",
+    "db:local": "turbo -F @entwine/server db:local",
+    "check": "biome check --write .",
+    "clean": "find . -type d -name 'node_modules' -exec rm -rf {} +"
   },
   "dependencies": {
     "@entwine/env": "workspace:*",

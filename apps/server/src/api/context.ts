@@ -1,6 +1,6 @@
 import type { Context as HonoContext } from "hono";
 
-import { auth } from "@entwine/auth";
+import { auth } from "@/auth";
 
 export type CreateContextOptions = {
   context: HonoContext;

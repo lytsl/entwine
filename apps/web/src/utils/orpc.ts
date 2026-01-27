@@ -1,4 +1,4 @@
-import type { AppRouterClient } from "@entwine/api/routers/index";
+import type { AppRouterClient } from "@entwine/server";
 
 import { env } from "@entwine/env/web";
 import { createORPCClient } from "@orpc/client";

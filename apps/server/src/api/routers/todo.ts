@@ -1,5 +1,5 @@
-import { db } from "@entwine/db";
-import { todo } from "@entwine/db/schema/todo";
+import { db } from "@/db";
+import { todo } from "@/db/schema/todo";
 import { eq } from "drizzle-orm";
 import z from "zod";
 
