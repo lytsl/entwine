@@ -1,44 +1,44 @@
 {
-  "name": "@entwine/server",
-  "type": "module",
-  "exports": {
-    ".": {
-      "default": null,
-      "types": "./types/src/index.d.ts"
-    }
-  },
-  "scripts": {
-    "build": "tsdown",
-    "build:types": "tsgo",
-    "check-types": "tsc -b",
-    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
-    "dev": "bun run --hot src/index.ts",
-    "start": "bun run dist/index.js",
-    "db:local": "turso dev --db-file local.db",
-    "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
-  },
-  "dependencies": {
-    "@entwine/env": "workspace:*",
-    "@orpc/openapi": "catalog:",
-    "@orpc/server": "catalog:",
-    "@orpc/zod": "catalog:",
-    "better-auth": "^1.4.9",
-    "@libsql/client": "catalog:",
-    "libsql": "catalog:",
-    "dotenv": "catalog:",
-    "hono": "catalog:",
-    "zod": "catalog:",
-    "drizzle-orm": "^0.45.1"
-  },
-  "devDependencies": {
-    "@entwine/config": "workspace:*",
-    "@types/bun": "catalog:",
-    "tsdown": "^0.16.5",
-    "typescript": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "drizzle-kit": "^0.31.8"
-  }
+	"name": "@entwine/server",
+	"type": "module",
+	"exports": {
+		".": {
+			"default": null,
+			"types": "./types/src/index.d.ts"
+		}
+	},
+	"scripts": {
+		"build": "tsdown",
+		"build:types": "tsgo",
+		"check-types": "tsc -b",
+		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
+		"dev": "bun run --hot src/index.ts",
+		"start": "bun run dist/index.js",
+		"db:local": "turso dev --db-file local.db",
+		"db:push": "drizzle-kit push",
+		"db:generate": "drizzle-kit generate",
+		"db:studio": "drizzle-kit studio",
+		"db:migrate": "drizzle-kit migrate"
+	},
+	"dependencies": {
+		"@entwine/env": "workspace:*",
+		"@orpc/openapi": "catalog:",
+		"@orpc/server": "catalog:",
+		"@orpc/zod": "catalog:",
+		"better-auth": "^1.4.9",
+		"@libsql/client": "catalog:",
+		"libsql": "catalog:",
+		"dotenv": "catalog:",
+		"hono": "catalog:",
+		"zod": "catalog:",
+		"drizzle-orm": "^0.45.1"
+	},
+	"devDependencies": {
+		"@entwine/config": "workspace:*",
+		"@types/bun": "catalog:",
+		"tsdown": "^0.16.5",
+		"typescript": "catalog:",
+		"@typescript/native-preview": "catalog:",
+		"drizzle-kit": "^0.31.8"
+	}
 }
