@@ -1,0 +1,24 @@
+{
+  "name": "@entwine/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@entwine/db": "workspace:*",
+    "@entwine/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@entwine/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
