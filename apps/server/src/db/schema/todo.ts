@@ -1,7 +1,8 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { DbType } from "@entwine/typebox";
+import { sqliteTable } from "drizzle-orm/sqlite-core";
 
 export const todo = sqliteTable("todo", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
-	text: text("text").notNull(),
-	completed: integer("completed", { mode: "boolean" }).default(false).notNull(),
+	id: DbType.Integer().primaryKey(),
+	text: DbType.String({ minLength: 1 }).notNull(),
+	completed: DbType.Boolean({ default: false }).default(false).notNull(),
 });

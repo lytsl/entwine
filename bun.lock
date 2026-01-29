@@ -21,6 +21,7 @@
       "name": "@entwine/server",
       "dependencies": {
         "@entwine/env": "workspace:*",
+        "@entwine/typebox": "workspace:*",
         "@hono/typebox-validator": "^1.1.0",
         "@libsql/client": "catalog:",
         "@orpc/openapi": "catalog:",
@@ -28,8 +29,8 @@
         "@orpc/zod": "catalog:",
         "better-auth": "^1.4.9",
         "dotenv": "catalog:",
-        "drizzle-orm": "^0.45.1",
-        "drizzle-typebox": "^0.3.3",
+        "drizzle-orm": "catalog:",
+        "drizzle-typebox": "catalog:",
         "hono": "catalog:",
         "libsql": "catalog:",
         "typebox": "catalog:",
@@ -126,8 +127,20 @@
       "name": "@entwine/typebox",
       "version": "0.0.0",
       "dependencies": {
+        "@entwine/utility": "workspace:*",
+        "drizzle-orm": "catalog:",
+        "drizzle-typebox": "catalog:",
         "typebox": "catalog:",
       },
+      "devDependencies": {
+        "@entwine/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/utility": {
+      "name": "@entwine/utility",
+      "version": "0.0.0",
       "devDependencies": {
         "@entwine/config": "workspace:*",
         "@types/bun": "catalog:",
@@ -146,6 +159,8 @@
     "@typescript/native-preview": "^7.0.0-dev.20260122.3",
     "better-auth": "^1.4.9",
     "dotenv": "^17.2.2",
+    "drizzle-orm": "^0.45.1",
+    "drizzle-typebox": "^0.3.3",
     "hono": "^4.8.2",
     "libsql": "0.5.22",
     "typebox": "^1.0.80",
@@ -268,6 +283,8 @@
     "@entwine/server": ["@entwine/server@workspace:apps/server"],
 
     "@entwine/typebox": ["@entwine/typebox@workspace:packages/typebox"],
+
+    "@entwine/utility": ["@entwine/utility@workspace:packages/utility"],
 
     "@entwine/web": ["@entwine/web@workspace:apps/web"],
 
@@ -1346,6 +1363,8 @@
     "use-sync-external-store": ["use-sync-external-store@1.6.0", "", { "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w=="],
 
     "util-deprecate": ["util-deprecate@1.0.2", "", {}, "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw=="],
+
+    "valibot": ["valibot@1.2.0", "", { "peerDependencies": { "typescript": ">=5" }, "optionalPeers": ["typescript"] }, "sha512-mm1rxUsmOxzrwnX5arGS+U4T25RdvpPjPN4yR0u9pUBov9+zGVtO84tif1eY4r6zWxVxu3KzIyknJy3rxfRZZg=="],
 
     "validate-npm-package-name": ["validate-npm-package-name@7.0.2", "", {}, "sha512-hVDIBwsRruT73PbK7uP5ebUt+ezEtCmzZz3F59BSr2F6OVFnJ/6h8liuvdLrQ88Xmnk6/+xGGuq+pG9WwTuy3A=="],
 

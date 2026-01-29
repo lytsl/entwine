@@ -10,7 +10,7 @@ export function Numeric(property?: Type.TNumberOptions) {
 		Type.Union(
 			[
 				Type.String({
-          pattern: /^-?\d+(\.\d+)?$/,
+					pattern: /^-?\d+(\.\d+)?$/,
 					default: 0,
 				}),
 				Type.Number(property),

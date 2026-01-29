@@ -21,7 +21,9 @@
 			"libsql": "0.5.22",
 			"@orpc/client": "^1.12.2",
 			"@typescript/native-preview": "^7.0.0-dev.20260122.3",
-			"@tanstack/react-query": "^5.90.12"
+			"@tanstack/react-query": "^5.90.12",
+			"drizzle-orm": "^0.45.1",
+			"drizzle-typebox": "^0.3.3"
 		}
 	},
 	"type": "module",

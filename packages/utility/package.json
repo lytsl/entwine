@@ -1,5 +1,5 @@
 {
-	"name": "@entwine/typebox",
+	"name": "@entwine/utility",
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
@@ -8,12 +8,7 @@
 			"default": "./src/index.ts"
 		}
 	},
-	"dependencies": {
-		"typebox": "catalog:",
-		"drizzle-orm": "catalog:",
-		"drizzle-typebox": "catalog:",
-		"@entwine/utility": "workspace:*"
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"@entwine/config": "workspace:*",
 		"@types/bun": "catalog:",

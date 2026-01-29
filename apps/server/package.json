@@ -22,6 +22,7 @@
 	},
 	"dependencies": {
 		"@entwine/env": "workspace:*",
+		"@entwine/typebox": "workspace:*",
 		"@hono/typebox-validator": "^1.1.0",
 		"@libsql/client": "catalog:",
 		"@orpc/openapi": "catalog:",
@@ -29,8 +30,8 @@
 		"@orpc/zod": "catalog:",
 		"better-auth": "^1.4.9",
 		"dotenv": "catalog:",
-		"drizzle-orm": "^0.45.1",
-		"drizzle-typebox": "^0.3.3",
+		"drizzle-orm": "catalog:",
+		"drizzle-typebox": "catalog:",
 		"hono": "catalog:",
 		"libsql": "catalog:",
 		"typebox": "catalog:",
