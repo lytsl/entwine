@@ -13,6 +13,7 @@
 	"dependencies": {
 		"@base-ui/react": "^1.0.0",
 		"@entwine/env": "workspace:*",
+		"@entwine/hono-react-query": "workspace:*",
 		"@hookform/resolvers": "^5.1.1",
 		"@libsql/client": "catalog:",
 		"@orpc/client": "catalog:",

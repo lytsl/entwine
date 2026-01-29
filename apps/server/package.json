@@ -22,16 +22,19 @@
 	},
 	"dependencies": {
 		"@entwine/env": "workspace:*",
+		"@hono/typebox-validator": "^1.1.0",
+		"@libsql/client": "catalog:",
 		"@orpc/openapi": "catalog:",
 		"@orpc/server": "catalog:",
 		"@orpc/zod": "catalog:",
 		"better-auth": "^1.4.9",
-		"@libsql/client": "catalog:",
-		"libsql": "catalog:",
 		"dotenv": "catalog:",
+		"drizzle-orm": "^0.45.1",
+		"drizzle-typebox": "^0.3.3",
 		"hono": "catalog:",
-		"zod": "catalog:",
-		"drizzle-orm": "^0.45.1"
+		"libsql": "catalog:",
+		"typebox": "catalog:",
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@entwine/config": "workspace:*",
