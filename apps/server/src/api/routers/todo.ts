@@ -1,35 +1,39 @@
+import { Type } from "@entwine/typebox";
+import { tbValidator } from "@hono/typebox-validator";
 import { eq } from "drizzle-orm";
-import z from "zod";
+import { Hono } from "hono";
 import { db } from "@/db";
-import { todo } from "@/db/schema/todo";
+import { todo, todoSchema } from "@/db/schema";
 
-import { publicProcedure } from "../index";
-
-export const todoRouter = {
-	getAll: publicProcedure.handler(async () => {
-		return await db.select().from(todo);
-	}),
-
-	create: publicProcedure
-		.input(z.object({ text: z.string().min(1) }))
-		.handler(async ({ input }) => {
-			return await db.insert(todo).values({
-				text: input.text,
-			});
-		}),
-
-	toggle: publicProcedure
-		.input(z.object({ id: z.number(), completed: z.boolean() }))
-		.handler(async ({ input }) => {
-			return await db
+const app = new Hono()
+	.get("/", async (c) => c.json(await db.select().from(todo)))
+	.post("/", tbValidator("json", todoSchema.create), async (c) => {
+		const payload = c.req.valid("json");
+		const data = await db.insert(todo).values(payload);
+		return c.json(data, 201);
+	})
+	.patch(
+		"/:id",
+		tbValidator("json", todoSchema.update),
+		tbValidator("param", Type.Object({ id: Type.Integer() })),
+		async (c) => {
+			const param = c.req.valid("param");
+			const payload = c.req.valid("json");
+			const data = await db
 				.update(todo)
-				.set({ completed: input.completed })
-				.where(eq(todo.id, input.id));
-		}),
+				.set(payload)
+				.where(eq(todo.id, param.id));
+			return c.json(data);
+		},
+	)
+	.delete(
+		"/:id",
+		tbValidator("param", Type.Object({ id: Type.Integer() })),
+		async (c) => {
+			const param = c.req.valid("param");
+			const data = await db.delete(todo).where(eq(todo.id, param.id));
+			return c.json(data);
+		},
+	);
 
-	delete: publicProcedure
-		.input(z.object({ id: z.number() }))
-		.handler(async ({ input }) => {
-			return await db.delete(todo).where(eq(todo.id, input.id));
-		}),
-};
+export default app;

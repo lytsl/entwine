@@ -1,0 +1,2 @@
+- not able to handle c.text() response from hono
+- requires empty object in queryOptions 

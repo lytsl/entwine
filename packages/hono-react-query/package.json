@@ -8,7 +8,7 @@
 			"default": "./src/index.ts"
 		}
 	},
-	"dependencies": {
+	"peerDependencies": {
 		"@tanstack/react-query": "catalog:",
 		"hono": "catalog:"
 	},

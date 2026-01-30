@@ -1,8 +1,24 @@
-import { DbType } from "@entwine/typebox";
-import { sqliteTable } from "drizzle-orm/sqlite-core";
+import {
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
+} from "@entwine/drizzle-typebox";
+import { type TSchemaOptions, type TStringOptions, Type } from "@entwine/typebox";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const todo = sqliteTable("todo", {
-	id: DbType.Integer().primaryKey(),
-	text: DbType.String({ minLength: 1 }).notNull(),
-	completed: DbType.Boolean({ default: false }).default(false).notNull(),
+	id: integer().primaryKey({ autoIncrement: true }),
+	text: text()
+		.notNull()
+		.typebox(Type.String({  minLength: 1 })),
+	completed: integer({ mode: "boolean" })
+		.default(false)
+		.notNull()
+		.typebox((schema: TSchemaOptions)=>Type.Boolean({...schema})),
 });
+
+export const todoSchema = {
+	create: createInsertSchema(todo),
+	update: createUpdateSchema(todo),
+	select: createSelectSchema(todo),
+};

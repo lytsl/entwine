@@ -7,7 +7,6 @@ import * as schema from "@/db/schema/auth";
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "sqlite",
-
 		schema: schema,
 	}),
 	trustedOrigins: [env.CORS_ORIGIN],
@@ -23,3 +22,8 @@ export const auth = betterAuth({
 	},
 	plugins: [],
 });
+
+export type AuthHonoVariablesType = {
+	user: typeof auth.$Infer.Session.user | null;
+	session: typeof auth.$Infer.Session.session | null;
+};

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { orpc } from "@/utils/orpc";
+import { api } from "@/utils/api";
 
 export const Route = createFileRoute("/todos")({
 	component: TodosRoute,
@@ -22,24 +22,21 @@ export const Route = createFileRoute("/todos")({
 function TodosRoute() {
 	const [newTodoText, setNewTodoText] = useState("");
 
-	const todos = useQuery(orpc.todo.getAll.queryOptions());
-	const createMutation = useMutation(
-		orpc.todo.create.mutationOptions({
-			onSuccess: () => {
+	const todos = useQuery(api.todo.$get.queryOptions({}));
+	const createMutation = useMutation(api.todo.$post.mutationOptions({
+		onSuccess: () => {
 				todos.refetch();
-				setNewTodoText("");
 			},
-		}),
-	);
+	}));
 	const toggleMutation = useMutation(
-		orpc.todo.toggle.mutationOptions({
+		api.todo[":id"].$patch.mutationOptions({
 			onSuccess: () => {
 				todos.refetch();
 			},
 		}),
 	);
 	const deleteMutation = useMutation(
-		orpc.todo.delete.mutationOptions({
+		api.todo[":id"].$delete.mutationOptions({
 			onSuccess: () => {
 				todos.refetch();
 			},
@@ -49,16 +46,16 @@ function TodosRoute() {
 	const handleAddTodo = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (newTodoText.trim()) {
-			createMutation.mutate({ text: newTodoText });
+			createMutation.mutate({ json: { text: newTodoText } });
 		}
 	};
 
 	const handleToggleTodo = (id: number, completed: boolean) => {
-		toggleMutation.mutate({ id, completed: !completed });
+		toggleMutation.mutate({ param: { id }, json: { completed: !completed } });
 	};
 
 	const handleDeleteTodo = (id: number) => {
-		deleteMutation.mutate({ id });
+		deleteMutation.mutate({ param: { id } });
 	};
 
 	return (

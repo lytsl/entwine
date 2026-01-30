@@ -21,21 +21,17 @@
 		"db:migrate": "drizzle-kit migrate"
 	},
 	"dependencies": {
+		"@entwine/drizzle-typebox": "workspace:*",
 		"@entwine/env": "workspace:*",
 		"@entwine/typebox": "workspace:*",
 		"@hono/typebox-validator": "^1.1.0",
 		"@libsql/client": "catalog:",
-		"@orpc/openapi": "catalog:",
-		"@orpc/server": "catalog:",
-		"@orpc/zod": "catalog:",
 		"better-auth": "^1.4.9",
 		"dotenv": "catalog:",
 		"drizzle-orm": "catalog:",
-		"drizzle-typebox": "catalog:",
 		"hono": "catalog:",
-		"libsql": "catalog:",
-		"typebox": "catalog:",
-		"zod": "catalog:"
+		"hono-openapi": "^1.2.0",
+		"libsql": "catalog:"
 	},
 	"devDependencies": {
 		"@entwine/config": "workspace:*",
