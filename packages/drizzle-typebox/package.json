@@ -1,0 +1,40 @@
+{
+	"name": "@entwine/drizzle-typebox",
+	"version": "0.3.3",
+	"description": "Generate Typebox schemas from Drizzle ORM schemas",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./src/index.ts"
+		}
+	},
+	"keywords": [
+		"typebox",
+		"validate",
+		"validation",
+		"schema",
+		"drizzle",
+		"orm",
+		"pg",
+		"mysql",
+		"postgresql",
+		"postgres",
+		"sqlite",
+		"database",
+		"sql",
+		"typescript",
+		"ts"
+	],
+	"author": "Drizzle Team",
+	"license": "Apache-2.0",
+	"peerDependencies": {
+		"@entwine/typebox": "workspace:*",
+		"drizzle-orm": "catalog:"
+	},
+	"devDependencies": {
+		"@entwine/config": "workspace:*",
+		"@types/bun": "catalog:",
+		"typescript": "catalog:"
+	}
+}
