@@ -9,10 +9,7 @@
 		}
 	},
 	"dependencies": {
-		"typebox": "catalog:",
-		"drizzle-orm": "catalog:",
-		"drizzle-typebox": "catalog:",
-		"@entwine/utility": "workspace:*"
+		"typebox": "catalog:"
 	},
 	"devDependencies": {
 		"@entwine/config": "workspace:*",
