@@ -48,7 +48,7 @@ export function handleColumns(
 			continue;
 		}
 
-		const refinement = selected.config?.typebox;
+		const refinement = selected?.config?.typebox;
 		if (refinement !== undefined && typeof refinement !== "function") {
 			columnSchemas[key] = refinement;
 			continue;
