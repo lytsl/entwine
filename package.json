@@ -39,7 +39,6 @@
 		"clean": "find . -type d -name 'node_modules' -exec rm -rf {} +"
 	},
 	"dependencies": {
-		"@entwine/env": "workspace:*",
 		"dotenv": "catalog:",
 		"zod": "catalog:"
 	},

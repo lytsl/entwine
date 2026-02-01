@@ -22,7 +22,6 @@
 	},
 	"dependencies": {
 		"@entwine/drizzle-arktype": "workspace:*",
-		"@entwine/env": "workspace:*",
 		"@hono/arktype-validator": "^2.0.1",
 		"@libsql/client": "catalog:",
 		"arktype": "catalog:",

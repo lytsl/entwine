@@ -1,9 +1,9 @@
-import { env } from "@entwine/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import todoRouter from "@/api/routers/todo";
 import { type AuthHonoVariablesType, auth } from "@/auth";
+import { env } from "../env";
 
 const app = new Hono<{
 	Variables: AuthHonoVariablesType;
