@@ -1,6 +1,6 @@
-This is a modified version of `drizzle-typebox`, originally licensed under Apache 2.0.
+This is a modified version of `drizzle-arktype`, originally licensed under Apache 2.0.
 
-`drizzle-typebox` is a plugin for [Drizzle ORM](https://github.com/drizzle-team/drizzle-orm) that allows you to generate [@sinclair/typebox](https://github.com/sinclairzx81/typebox) schemas from Drizzle ORM schemas.
+`drizzle-arktype` is a plugin for [Drizzle ORM](https://github.com/drizzle-team/drizzle-orm) that allows you to generate [arktype](https://arktype.io/) schemas from Drizzle ORM schemas.
 
 **Features**
 
@@ -12,9 +12,8 @@ This is a modified version of `drizzle-typebox`, originally licensed under Apach
 
 ```ts
 import { pgEnum, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
-import { createInsertSchema, createSelectSchema } from 'drizzle-typebox';
-import { Type } from '@sinclair/typebox';
-import { Value } from '@sinclair/typebox/value';
+import { createInsertSchema, createSelectSchema } from 'drizzle-arktype';
+import { type } from 'arktype';
 
 const users = pgTable('users', {
 	id: serial('id').primaryKey(),
@@ -35,18 +34,18 @@ const selectUserSchema = createSelectSchema(users);
 
 // Overriding the fields
 const insertUserSchema = createInsertSchema(users, {
-	role: Type.String(),
+	role: type('string'),
 });
 
 // Refining the fields - useful if you want to change the fields before they become nullable/optional in the final schema
 const insertUserSchema = createInsertSchema(users, {
-	id: (schema) => Type.Number({ ...schema, minimum: 0 }),
-	role: Type.String(),
+	id: (schema) => schema.atLeast(1),
+	role: type('string'),
 });
 
 // Usage
 
-const isUserValid: boolean = Value.Check(insertUserSchema, {
+const isUserValid = parse(insertUserSchema, {
 	name: 'John Doe',
 	email: 'johndoe@test.com',
 	role: 'admin',

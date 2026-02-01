@@ -1,4 +1,4 @@
-import type { TSchema } from "@entwine/typebox";
+import type { Type } from "arktype";
 import type {
 	ColumnBaseConfig,
 	ColumnBuilderBaseConfig,
@@ -11,11 +11,11 @@ declare module "drizzle-orm/sqlite-core" {
 		T extends ColumnBuilderBaseConfig<ColumnDataType, string>,
 	> {
 		meta(metadata: Record<string, any>): this;
-		typebox(schema: TSchema): this;
+		arktype(schema: Type): this;
 	}
 	interface SQLiteColumn<T extends ColumnBaseConfig<ColumnDataType, string>> {
 		readonly meta: Record<string, any> | undefined;
-		readonly typebox: TSchema | undefined;
+		readonly arktype: Type | undefined;
 	}
 }
 
@@ -23,8 +23,8 @@ SQLiteColumnBuilder.prototype.meta = function (metadata: Record<string, any>) {
 	(this as any).config.meta = metadata;
 	return this;
 };
-SQLiteColumnBuilder.prototype.typebox = function (schema: TSchema) {
-	(this as any).config.typebox = schema;
+SQLiteColumnBuilder.prototype.arktype = function (schema: Type) {
+	(this as any).config.arktype = schema;
 	return this;
 };
 
@@ -35,9 +35,9 @@ Object.defineProperty(SQLiteColumn.prototype, "meta", {
 	configurable: true,
 	enumerable: true,
 });
-Object.defineProperty(SQLiteColumn.prototype, "typebox", {
+Object.defineProperty(SQLiteColumn.prototype, "arktype", {
 	get() {
-		return (this as any).config?.typebox;
+		return (this as any).config?.arktype;
 	},
 	configurable: true,
 	enumerable: true,

@@ -1,6 +1,5 @@
-import type * as t from "@entwine/typebox";
+import type { Type, type } from "arktype";
 import type {
-	Assume,
 	Column,
 	DrizzleTypeError,
 	SelectedFieldsFlat,
@@ -8,8 +7,13 @@ import type {
 	Table,
 	View,
 } from "drizzle-orm";
-import type { GetTypeboxType, HandleColumn } from "./column.types.ts";
-import type { ColumnIsGeneratedAlwaysAs, GetSelection } from "./utils.ts";
+import type {
+	ArktypeNullable,
+	ArktypeOptional,
+	GetArktypeType,
+	HandleColumn,
+} from "./column.types";
+import type { ColumnIsGeneratedAlwaysAs, GetSelection } from "./utils";
 
 export interface Conditions {
 	never: (column?: Column) => boolean;
@@ -17,8 +21,10 @@ export interface Conditions {
 	nullable: (column: Column) => boolean;
 }
 
-type BuildRefineField<T> = T extends t.TSchema
-	? ((schema: T) => t.TSchema) | t.TSchema
+type GenericSchema = type.cast<unknown> | [type.cast<unknown>, "?"];
+
+type BuildRefineField<T> = T extends GenericSchema
+	? ((schema: T) => GenericSchema) | GenericSchema
 	: never;
 
 export type BuildRefine<TColumns extends Record<string, any>> = {
@@ -29,7 +35,7 @@ export type BuildRefine<TColumns extends Record<string, any>> = {
 		| View
 		? K
 		: never]?: TColumns[K] extends Column
-		? BuildRefineField<GetTypeboxType<TColumns[K]>>
+		? BuildRefineField<GetArktypeType<TColumns[K]>>
 		: BuildRefine<GetSelection<TColumns[K]>>;
 };
 
@@ -37,23 +43,23 @@ type HandleRefinement<
 	TType extends "select" | "insert" | "update",
 	TRefinement,
 	TColumn extends Column,
-> = TRefinement extends (schema: any) => t.TSchema
+> = TRefinement extends (schema: any) => GenericSchema
 	? (
 			TColumn["_"]["notNull"] extends true
 				? ReturnType<TRefinement>
-				: t.TUnion<[ReturnType<TRefinement>, t.TNull]>
+				: ArktypeNullable<ReturnType<TRefinement>>
 		) extends infer TSchema
 		? TType extends "update"
-			? t.TOptional<Assume<TSchema, t.TSchema>>
+			? ArktypeOptional<TSchema>
 			: TSchema
-		: t.TSchema
+		: Type<any>
 	: TRefinement;
 
 type IsRefinementDefined<
 	TRefinements extends Record<string | symbol | number, any> | undefined,
 	TKey extends string | symbol | number,
 > = TRefinements extends object
-	? TRefinements[TKey] extends t.TSchema | ((schema: any) => any)
+	? TRefinements[TKey] extends GenericSchema | ((schema: any) => any)
 		? true
 		: false
 	: false;
@@ -62,33 +68,28 @@ export type BuildSchema<
 	TType extends "select" | "insert" | "update",
 	TColumns extends Record<string, any>,
 	TRefinements extends Record<string, any> | undefined,
-> = t.TObject<
+> = type.instantiate<
 	Simplify<{
-		[K in keyof TColumns as ColumnIsGeneratedAlwaysAs<TColumns[K]> extends true
+		readonly [K in keyof TColumns as ColumnIsGeneratedAlwaysAs<
+			TColumns[K]
+		> extends true
 			? never
 			: K]: TColumns[K] extends infer TColumn extends Column
 			? IsRefinementDefined<TRefinements, K> extends true
-				? Assume<
-						HandleRefinement<
-							TType,
-							TRefinements[K & keyof TRefinements],
-							TColumn
-						>,
-						t.TSchema
-					>
+				? HandleRefinement<TType, TRefinements[K & keyof TRefinements], TColumn>
 				: HandleColumn<TType, TColumn>
-			: TColumns[K] extends infer TObject extends
+			: TColumns[K] extends infer TNested extends
 						| SelectedFieldsFlat<Column>
 						| Table
 						| View
 				? BuildSchema<
 						TType,
-						GetSelection<TObject>,
+						GetSelection<TNested>,
 						TRefinements extends object
 							? TRefinements[K & keyof TRefinements]
 							: undefined
 					>
-				: t.TAny;
+				: any;
 	}>
 >;
 
@@ -97,10 +98,8 @@ export type NoUnknownKeys<
 	TCompare extends Record<string, any>,
 > = {
 	[K in keyof TRefinement]: K extends keyof TCompare
-		? TRefinement[K] extends t.TSchema
-			? TRefinement[K]
-			: TRefinement[K] extends Record<string, t.TSchema>
-				? NoUnknownKeys<TRefinement[K], TCompare[K]>
-				: TRefinement[K]
+		? TRefinement[K] extends Record<string, GenericSchema>
+			? NoUnknownKeys<TRefinement[K], TCompare[K]>
+			: TRefinement[K]
 		: DrizzleTypeError<`Found unknown key in refinement: "${K & string}"`>;
 };

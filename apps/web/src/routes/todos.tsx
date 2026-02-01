@@ -23,11 +23,13 @@ function TodosRoute() {
 	const [newTodoText, setNewTodoText] = useState("");
 
 	const todos = useQuery(api.todo.$get.queryOptions({}));
-	const createMutation = useMutation(api.todo.$post.mutationOptions({
-		onSuccess: () => {
+	const createMutation = useMutation(
+		api.todo.$post.mutationOptions({
+			onSuccess: () => {
 				todos.refetch();
 			},
-	}));
+		}),
+	);
 	const toggleMutation = useMutation(
 		api.todo[":id"].$patch.mutationOptions({
 			onSuccess: () => {

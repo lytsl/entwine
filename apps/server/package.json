@@ -21,11 +21,11 @@
 		"db:migrate": "drizzle-kit migrate"
 	},
 	"dependencies": {
-		"@entwine/drizzle-typebox": "workspace:*",
+		"@entwine/drizzle-arktype": "workspace:*",
 		"@entwine/env": "workspace:*",
-		"@entwine/typebox": "workspace:*",
-		"@hono/typebox-validator": "^1.1.0",
+		"@hono/arktype-validator": "^2.0.1",
 		"@libsql/client": "catalog:",
+		"arktype": "catalog:",
 		"better-auth": "^1.4.9",
 		"dotenv": "catalog:",
 		"drizzle-orm": "catalog:",

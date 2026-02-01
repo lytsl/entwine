@@ -1,7 +1,7 @@
 {
-	"name": "@entwine/drizzle-typebox",
-	"version": "0.3.3",
-	"description": "Generate Typebox schemas from Drizzle ORM schemas",
+	"name": "@entwine/drizzle-arktype",
+	"version": "0.1.3",
+	"description": "Generate arktype schemas from Drizzle ORM schemas",
 	"private": true,
 	"type": "module",
 	"exports": {
@@ -10,7 +10,7 @@
 		}
 	},
 	"keywords": [
-		"typebox",
+		"arktype",
 		"validate",
 		"validation",
 		"schema",
@@ -29,7 +29,7 @@
 	"author": "Drizzle Team",
 	"license": "Apache-2.0",
 	"peerDependencies": {
-		"@entwine/typebox": "workspace:*",
+		"arktype": "catalog:",
 		"drizzle-orm": "catalog:"
 	},
 	"devDependencies": {

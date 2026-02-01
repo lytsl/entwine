@@ -1,7 +1,7 @@
-import type { Static, TSchema } from "@entwine/typebox";
+import type { type } from "arktype";
 import type { Column, SelectedFieldsFlat, Table, View } from "drizzle-orm";
 import type { PgEnum } from "drizzle-orm/pg-core";
-import type { literalSchema } from "./column.ts";
+import type { literalSchema } from "./column";
 
 export function isColumnType<T extends Column>(
 	column: Column,
@@ -24,24 +24,8 @@ export const isPgEnum: (
 	entity: any,
 ) => entity is PgEnum<[string, ...string[]]> = isWithEnum as any;
 
-type Literal = Static<typeof literalSchema>;
-export type Json = Literal | { [key: string]: any } | any[];
-export interface JsonSchema extends TSchema {
-	["~kind"]: "Union";
-	static: Json;
-	anyOf: Json;
-}
-
-export type IsNever<T> = [T] extends [never] ? true : false;
-
-export type IsEnumDefined<TEnum extends string[] | undefined> = [
-	string,
-	...string[],
-] extends TEnum
-	? false
-	: undefined extends TEnum
-		? false
-		: true;
+type Literal = type.infer<typeof literalSchema>;
+export type Json = Literal | Record<string, any> | any[];
 
 export type ColumnIsGeneratedAlwaysAs<TColumn> = TColumn extends Column
 	? TColumn["_"]["identity"] extends "always"

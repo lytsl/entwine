@@ -1,9 +1,5 @@
-import type {
-	TSchema,
-	TStringOptions,
-	Type as typebox,
-} from "@entwine/typebox";
-import { Type as t } from "@entwine/typebox";
+/** biome-ignore-all lint/suspicious/noExplicitAny: taken from drizzle-arktype */
+import { type Type, type } from "arktype";
 import type { Column, ColumnBaseConfig } from "drizzle-orm";
 import type {
 	MySqlBigInt53,
@@ -64,32 +60,30 @@ import type {
 	SQLiteText,
 } from "drizzle-orm/sqlite-core";
 import { CONSTANTS } from "./constants";
-import type { JsonSchema } from "./utils";
 import { isColumnType, isWithEnum } from "./utils";
 
-export const literalSchema = t.Union([
-	t.String(),
-	t.Number(),
-	t.Boolean(),
-	t.Null(),
-]);
-export const jsonSchema: JsonSchema = t.Union([
-	literalSchema,
-	t.Array(t.Any()),
-	t.Record(t.String(), t.Any()),
-]) as any;
+export const literalSchema = type.string
+	.or(type.number)
+	.or(type.boolean)
+	.or(type.null);
+export const jsonSchema = literalSchema
+	.or(type.unknown.as<any>().array())
+	.or(type.object.as<Record<string, any>>());
+export const bufferSchema = type.unknown
+	.narrow((value) => value instanceof Buffer)
+	.as<Buffer>()
+	.describe(
+		// eslint-disable-line no-instanceof/no-instanceof
+		"a Buffer instance",
+	);
 
-export function mapEnumValues(values: string[]) {
-	return Object.fromEntries(values.map((value) => [value, value]));
-}
-
-export function columnToSchema(column: Column, t: typeof typebox): TSchema {
-	let schema!: TSchema;
+export function columnToSchema(column: Column): Type {
+	let schema!: Type;
 
 	if (isWithEnum(column)) {
 		schema = column.enumValues.length
-			? t.Enum(mapEnumValues(column.enumValues))
-			: t.String();
+			? type.enumerated(...column.enumValues)
+			: type.string;
 	}
 
 	if (!schema) {
@@ -100,77 +94,69 @@ export function columnToSchema(column: Column, t: typeof typebox): TSchema {
 				"PgPointTuple",
 			])
 		) {
-			schema = t.Tuple([t.Number(), t.Number()]);
+			schema = type([type.number, type.number]);
 		} else if (
 			isColumnType<PgPointObject<any> | PgGeometryObject<any>>(column, [
 				"PgGeometryObject",
 				"PgPointObject",
 			])
 		) {
-			schema = t.Object({ x: t.Number(), y: t.Number() });
+			schema = type({
+				x: type.number,
+				y: type.number,
+			});
 		} else if (
 			isColumnType<PgHalfVector<any> | PgVector<any>>(column, [
 				"PgHalfVector",
 				"PgVector",
 			])
 		) {
-			schema = t.Array(
-				t.Number(),
-				column.dimensions
-					? {
-							minItems: column.dimensions,
-							maxItems: column.dimensions,
-						}
-					: undefined,
-			);
+			schema = column.dimensions
+				? type.number.array().exactlyLength(column.dimensions)
+				: type.number.array();
 		} else if (isColumnType<PgLineTuple<any>>(column, ["PgLine"])) {
-			schema = t.Tuple([t.Number(), t.Number(), t.Number()]);
+			schema = type([type.number, type.number, type.number]);
 		} else if (isColumnType<PgLineABC<any>>(column, ["PgLineABC"])) {
-			schema = t.Object({
-				a: t.Number(),
-				b: t.Number(),
-				c: t.Number(),
+			schema = type({
+				a: type.number,
+				b: type.number,
+				c: type.number,
 			});
 		} // Handle other types
 		else if (isColumnType<PgArray<any, any>>(column, ["PgArray"])) {
-			schema = t.Array(
-				columnToSchema(column.baseColumn, t),
-				column.size
-					? {
-							minItems: column.size,
-							maxItems: column.size,
-						}
-					: undefined,
-			);
+			const arraySchema = columnToSchema(column.baseColumn).array();
+			schema = column.size
+				? arraySchema.exactlyLength(column.size)
+				: arraySchema;
 		} else if (column.dataType === "array") {
-			schema = t.Array(t.Any());
+			schema = type.unknown.array();
 		} else if (column.dataType === "number") {
-			schema = numberColumnToSchema(column, t);
+			schema = numberColumnToSchema(column);
 		} else if (column.dataType === "bigint") {
-			schema = bigintColumnToSchema(column, t);
+			schema = bigintColumnToSchema(column);
 		} else if (column.dataType === "boolean") {
-			schema = t.Boolean();
+			schema = type.boolean;
 		} else if (column.dataType === "date") {
-			schema = t.DateTime();
+			schema = type.Date;
 		} else if (column.dataType === "string") {
-			schema = stringColumnToSchema(column, t);
+			schema = stringColumnToSchema(column);
 		} else if (column.dataType === "json") {
 			schema = jsonSchema;
 		} else if (column.dataType === "custom") {
-			schema = t.Any();
+			schema = type.unknown;
 		} else if (column.dataType === "buffer") {
-			schema = t.Buffer();
+			schema = bufferSchema;
 		}
 	}
 
 	if (!schema) {
-		schema = t.Any();
+		schema = type.unknown;
 	}
 
 	return schema;
 }
 
-function numberColumnToSchema(column: Column, t: typeof typebox): TSchema {
+function numberColumnToSchema(column: Column): Type<number, any> {
 	let unsigned = column.getSQLType().includes("unsigned");
 	let min!: number;
 	let max!: number;
@@ -284,42 +270,60 @@ function numberColumnToSchema(column: Column, t: typeof typebox): TSchema {
 		max = Number.MAX_SAFE_INTEGER;
 	}
 
-	const key = integer ? "Integer" : "Number";
-	return t[key]({
-		minimum: min,
-		maximum: max,
-	});
+	return (integer ? type.keywords.number.integer : type.number)
+		.atLeast(min)
+		.atMost(max);
 }
 
-function bigintColumnToSchema(column: Column, t: typeof typebox): TSchema {
+/** @internal */
+export const unsignedBigintNarrow = (
+	v: bigint,
+	ctx: { mustBe: (expected: string) => false },
+) =>
+	v < 0n
+		? ctx.mustBe("greater than")
+		: v > CONSTANTS.INT64_UNSIGNED_MAX
+			? ctx.mustBe("less than")
+			: true;
+
+/** @internal */
+export const bigintNarrow = (
+	v: bigint,
+	ctx: { mustBe: (expected: string) => false },
+) =>
+	v < CONSTANTS.INT64_MIN
+		? ctx.mustBe("greater than")
+		: v > CONSTANTS.INT64_MAX
+			? ctx.mustBe("less than")
+			: true;
+
+function bigintColumnToSchema(column: Column): Type {
 	const unsigned = column.getSQLType().includes("unsigned");
-	const min = unsigned ? 0n : CONSTANTS.INT64_MIN;
-	const max = unsigned ? CONSTANTS.INT64_UNSIGNED_MAX : CONSTANTS.INT64_MAX;
-
-	return t.BigInt({
-		minimum: min,
-		maximum: max,
-	});
+	return type.bigint.narrow(unsigned ? unsignedBigintNarrow : bigintNarrow);
 }
 
-function stringColumnToSchema(column: Column, t: typeof typebox): TSchema {
+function stringColumnToSchema(column: Column): Type {
 	if (
 		isColumnType<PgUUID<ColumnBaseConfig<"string", "PgUUID">>>(column, [
 			"PgUUID",
 		])
 	) {
-		return t.String({ format: "uuid" });
+		return type(/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu).describe(
+			"a RFC-4122-compliant UUID",
+		);
 	}
 	if (
 		isColumnType<
 			PgBinaryVector<
-				ColumnBaseConfig<"string", "PgBinaryVector"> & { dimensions: number }
+				ColumnBaseConfig<"string", "PgBinaryVector"> & {
+					dimensions: number;
+				}
 			>
 		>(column, ["PgBinaryVector"])
 	) {
-		return t.RegExp(
-			/^[01]+$/,
-			column.dimensions ? { maxLength: column.dimensions } : undefined,
+		// @ts-expect-error : taken from drizzle-arktype
+		return type(`/^[01]{${column.dimensions}}$/`).describe(
+			`a string containing ones or zeros while being ${column.dimensions} characters long`,
 		);
 	}
 
@@ -368,14 +372,9 @@ function stringColumnToSchema(column: Column, t: typeof typebox): TSchema {
 		fixed = true;
 	}
 
-	const options: Partial<TStringOptions> = {};
-
-	if (max !== undefined && fixed) {
-		options.minLength = max;
-		options.maxLength = max;
-	} else if (max !== undefined) {
-		options.maxLength = max;
-	}
-
-	return t.String(Object.keys(options).length > 0 ? options : undefined);
+	return max && fixed
+		? type.string.exactlyLength(max)
+		: max
+			? type.string.atMostLength(max)
+			: type.string;
 }

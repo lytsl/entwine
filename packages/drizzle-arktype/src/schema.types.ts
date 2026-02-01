@@ -1,11 +1,11 @@
-import type * as t from "@entwine/typebox";
+import type { Type } from "arktype";
 import type { Table, View } from "drizzle-orm";
 import type { PgEnum } from "drizzle-orm/pg-core";
 import type {
 	BuildRefine,
 	BuildSchema,
 	NoUnknownKeys,
-} from "./schema.types.internal.ts";
+} from "./schema.types.internal";
 
 export interface CreateSelectSchema {
 	<TTable extends Table>(
@@ -27,7 +27,7 @@ export interface CreateSelectSchema {
 		refine: NoUnknownKeys<TRefine, TView["$inferSelect"]>,
 	): BuildSchema<"select", TView["_"]["selectedFields"], TRefine>;
 
-	<TEnum extends PgEnum<any>>(enum_: TEnum): t.TEnum<TEnum["enumValues"]>;
+	<TEnum extends PgEnum<any>>(enum_: TEnum): Type<TEnum["enumValues"][number]>;
 }
 
 export interface CreateInsertSchema {
@@ -58,8 +58,4 @@ export interface CreateUpdateSchema {
 		table: TTable,
 		refine?: TRefine,
 	): BuildSchema<"update", TTable["_"]["columns"], TRefine>;
-}
-
-export interface CreateSchemaFactoryOptions {
-	typeboxInstance?: any;
 }

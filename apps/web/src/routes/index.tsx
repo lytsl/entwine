@@ -1,7 +1,6 @@
-import { api } from "@/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-
+import { api } from "@/utils/api";
 
 export const Route = createFileRoute("/")({
 	component: HomeComponent,
