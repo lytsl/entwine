@@ -23,19 +23,19 @@
 	"dependencies": {
 		"@entwine/drizzle-arktype": "workspace:*",
 		"@hono/arktype-validator": "^2.0.1",
-		"@libsql/client": "catalog:",
 		"arktype": "catalog:",
-		"better-auth": "^1.4.9",
+		"better-auth": "catalog:",
 		"dotenv": "catalog:",
 		"drizzle-orm": "catalog:",
 		"hono": "catalog:",
 		"hono-openapi": "^1.2.0",
-		"libsql": "catalog:"
+		"@libsql/client": "0.15.15",
+		"libsql": "0.5.22"
 	},
 	"devDependencies": {
 		"@entwine/config": "workspace:*",
 		"@types/bun": "catalog:",
-		"tsdown": "^0.16.5",
+		"tsdown": "^0.20.1",
 		"typescript": "catalog:",
 		"@typescript/native-preview": "catalog:",
 		"drizzle-kit": "^0.31.8"
