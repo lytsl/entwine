@@ -1,0 +1,17 @@
+{
+	"name": "@entwine/utility",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./*": {
+			"default": "./src/*/index.ts"
+		}
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"@entwine/config": "workspace:*",
+		"@types/bun": "catalog:",
+		"typescript": "catalog:"
+	}
+}

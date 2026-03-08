@@ -1,0 +1,15 @@
+{
+	"extends": "@entwine/config/tsconfig.base.json",
+	"compilerOptions": {
+		"emitDeclarationOnly": true,
+		"declaration": true,
+		"declarationMap": false,
+		"sourceMap": false,
+		"composite": true,
+		"outDir": "types",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"jsx": "react-jsx"
+	}
+}
