@@ -1,11 +1,13 @@
 import type { Nullable } from "@entwine/utility/types";
 import { Hono } from "hono";
+import { websocket } from "hono/bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { auth, type BetterAuthSession } from "@/auth/better-auth";
 import origanizationRouter from "@/routes/auth/organization";
 import issueSyncRouter from "@/routes/sync/issue";
 import todoRouter from "@/routes/todo";
+import wsRouter from "@/routes/ws";
 import { env } from "../env";
 
 const app = new Hono<{
@@ -36,8 +38,9 @@ const app = new Hono<{
 	.get("/health", (c) => {
 		return c.json("OK");
 	})
-	.route("/api/auth/organization", origanizationRouter)
-	.route("/api/sync/issue", issueSyncRouter)
+	.route("/ws", wsRouter)
+	.route("/sync/issue", issueSyncRouter)
+	.route("/auth/organization", origanizationRouter)
 	.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
 	// .use("*", authGuard)
 	.route("/todo", todoRouter);
@@ -60,4 +63,5 @@ export type AppType = typeof app;
 export default {
 	port: env.PORT,
 	fetch: app.fetch,
+	websocket,
 };

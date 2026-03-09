@@ -34,6 +34,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { wsCollection } from "@/lib/sync";
 
 // --- Types ---
 interface Item {
@@ -279,8 +280,11 @@ export default function DraggableItemTable() {
 				.from({ issue: issueCollection })
 				// .where(({ issue }) => like(issue.title, searchQuery))
 				.orderBy(({ issue }) => issue.rank, "asc")
-				.limit(10)
-				.select(({ issue }) => issue),
+				.limit(10),
+	});
+
+	const items1 = useLiveQuery({
+		query: (q) => q.from({ issue: wsCollection }),
 	});
 
 	return (

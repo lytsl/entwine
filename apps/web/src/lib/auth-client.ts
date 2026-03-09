@@ -9,6 +9,7 @@ import { env } from "../../env";
 
 export const authClient = createAuthClient({
 	baseURL: env.VITE_SERVER_URL,
+	// basePath: "/api/auth",
 	plugins: [
 		// inferAdditionalFields<AuthType>(),
 		adminClient(),

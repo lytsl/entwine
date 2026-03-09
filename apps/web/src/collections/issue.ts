@@ -1,7 +1,7 @@
 import { parseLoadSubsetOptions } from "@tanstack/db";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 import { createCollection } from "@tanstack/react-db";
-import { api } from "@/utils/api";
+import { apiQuery } from "@/utils/api";
 import { queryClient } from "@/utils/query-client";
 
 export const issueCollection = createCollection(
@@ -13,11 +13,8 @@ export const issueCollection = createCollection(
 		syncMode: "on-demand", // Enable predicate push-down
 		queryFn: async (ctx) => {
 			const query: any = parseLoadSubsetOptions(ctx?.meta?.loadSubsetOptions);
-			const response = await api.api.sync.issue.$get.call({
-				query: JSON.stringify({
-					...ctx?.meta?.loadSubsetOptions,
-					...query,
-				}) as any,
+			const response = await apiQuery.sync.issue.$get.call({
+				query,
 			});
 			if (response.ok) {
 				const json = await response.json();
@@ -35,7 +32,7 @@ export const issueCollection = createCollection(
 			const newItems = transaction.mutations.map((m) => m.modified);
 
 			// Send to server and get back items with server-computed fields
-			const serverItems = await api.api.sync.issue.$post
+			const serverItems = await apiQuery.sync.issue.$post
 				.call({
 					json: newItems,
 				})
@@ -68,7 +65,7 @@ export const issueCollection = createCollection(
 				id: m.key,
 				changes: m.changes,
 			}));
-			const serverItems = await api.api.sync.issue.$patch
+			const serverItems = await apiQuery.sync.issue.$patch
 				.call({
 					json: updates,
 				})
