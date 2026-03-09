@@ -2,33 +2,46 @@ export type ConnectionState = "connecting" | "connected" | "disconnected";
 
 export interface WebSocketClientConfig {
 	url: string;
-	onMessage?: (event: MessageEvent) => void;
 	reconnectInterval?: number;
 	onStateChange?: (state: ConnectionState) => void;
 }
 
+export type MessageListener = (event: MessageEvent) => void;
+
 export class WebSocketClient {
 	public url: string;
-	public onMessage?: (event: MessageEvent) => void;
 	public reconnectInterval: number;
 	public onStateChange: (state: ConnectionState) => void;
 
-	public ws: WebSocket | null;
-	public connectionState: ConnectionState;
+	public ws: WebSocket | null = null;
+	public connectionState: ConnectionState = "disconnected";
 
-	// Using ReturnType ensures compatibility across Node and Browser environments
-	private reconnectTimer: ReturnType<typeof setTimeout> | null;
+	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+	// Store multiple listeners using a Set
+	private messageListeners: Set<MessageListener> = new Set();
 
 	constructor(config: WebSocketClientConfig) {
 		this.url = config.url;
-		this.onMessage = config.onMessage;
 		this.reconnectInterval = config.reconnectInterval || 5000;
 		this.onStateChange = config.onStateChange || (() => {});
-
-		this.ws = null;
-		this.reconnectTimer = null;
-		this.connectionState = "disconnected";
 	}
+
+	// --- Listener Management ---
+
+	public addMessageListener(listener: MessageListener): void {
+		this.messageListeners.add(listener);
+	}
+
+	public removeMessageListener(listener: MessageListener): void {
+		this.messageListeners.delete(listener);
+	}
+
+	public clearAllListeners(): void {
+		this.messageListeners.clear();
+	}
+
+	// --- Connection Management ---
 
 	private _updateState(newState: ConnectionState): void {
 		this.connectionState = newState;
@@ -46,9 +59,10 @@ export class WebSocketClient {
 		};
 
 		this.ws.onmessage = (event: MessageEvent) => {
-			if (this.onMessage) {
-				this.onMessage(event);
-			}
+			// Broadcast the event to all registered listeners
+			this.messageListeners.forEach((listener) => {
+				listener(event);
+			});
 		};
 
 		this.ws.onerror = (error: Event) => {

@@ -7,6 +7,7 @@ import {
 	type UpdateMutationFnParams,
 	type UtilsRecord,
 } from "@tanstack/db";
+import type { WebSocketClient } from "./ws-client";
 
 interface WebSocketMessage<T> {
 	type: "insert" | "update" | "delete" | "sync" | "transaction" | "ack";
@@ -25,8 +26,7 @@ interface WebSocketCollectionConfig<TItem extends object>
 		CollectionConfig<TItem>,
 		"onInsert" | "onUpdate" | "onDelete" | "sync"
 	> {
-	url: string;
-	reconnectInterval?: number;
+	wsClient: WebSocketClient;
 
 	// Note: onInsert/onUpdate/onDelete are handled by the WebSocket connection
 	// Users don't provide these handlers
@@ -34,17 +34,12 @@ interface WebSocketCollectionConfig<TItem extends object>
 
 interface WebSocketUtils extends UtilsRecord {
 	// reconnect: () => void;
-	getConnectionState: () => "connected" | "disconnected" | "connecting";
+	// getConnectionState: () => "connected" | "disconnected" | "connecting";
 }
 
 export function webSocketCollectionOptions<TItem extends object>(
 	config: WebSocketCollectionConfig<TItem>,
 ): CollectionConfig<TItem> & { utils: WebSocketUtils } {
-	let ws: WebSocket | null = null;
-	let reconnectTimer: NodeJS.Timeout | null = null;
-	let connectionState: "connected" | "disconnected" | "connecting" =
-		"disconnected";
-
 	// Track pending transactions awaiting acknowledgment
 	const pendingTransactions = new Map<
 		string,
@@ -58,102 +53,66 @@ export function webSocketCollectionOptions<TItem extends object>(
 	const sync: SyncConfig<TItem>["sync"] = (params) => {
 		const { begin, write, commit, markReady } = params;
 
-		function connect() {
-			connectionState = "connecting";
-			ws = new WebSocket(config.url);
+		const onMessage = (event: MessageEvent) => {
+			const message: WebSocketMessage<TItem> = JSON.parse(event.data);
 
-			ws.onopen = () => {
-				connectionState = "connected";
-				// Request initial sync
-				if (ws) ws.send(JSON.stringify({ type: "sync" }));
-			};
+			switch (message.type) {
+				case "sync":
+					// Initial sync with array of items
+					begin();
+					if (Array.isArray(message.data)) {
+						for (const item of message.data) {
+							write({ type: "insert", value: item });
+						}
+					}
+					commit();
+					markReady();
+					break;
 
-			ws.onmessage = (event) => {
-				const message: WebSocketMessage<TItem> = JSON.parse(event.data);
+				case "insert":
+				case "update":
+				case "delete":
+					// Real-time updates from other clients
+					begin();
+					write({
+						type: message.type,
+						value: message.data as TItem,
+					});
+					commit();
+					break;
 
-				switch (message.type) {
-					case "sync":
-						// Initial sync with array of items
+				case "ack":
+					// Server acknowledged our transaction
+					if (message.transactionId) {
+						const pending = pendingTransactions.get(message.transactionId);
+						if (pending) {
+							clearTimeout(pending.timeout);
+							pendingTransactions.delete(message.transactionId);
+							pending.resolve();
+						}
+					}
+					break;
+
+				case "transaction":
+					// Server sending back the actual data after processing our transaction
+					if (message.mutations) {
 						begin();
-						if (Array.isArray(message.data)) {
-							for (const item of message.data) {
-								write({ type: "insert", value: item });
-							}
+						for (const mutation of message.mutations) {
+							write({
+								type: mutation.type,
+								value: mutation.data,
+							});
 						}
 						commit();
-						markReady();
-						break;
+					}
+					break;
+			}
+		};
 
-					case "insert":
-					case "update":
-					case "delete":
-						// Real-time updates from other clients
-						begin();
-						write({
-							type: message.type,
-							value: message.data as TItem,
-						});
-						commit();
-						break;
+		config.wsClient.addMessageListener(onMessage);
 
-					case "ack":
-						// Server acknowledged our transaction
-						if (message.transactionId) {
-							const pending = pendingTransactions.get(message.transactionId);
-							if (pending) {
-								clearTimeout(pending.timeout);
-								pendingTransactions.delete(message.transactionId);
-								pending.resolve();
-							}
-						}
-						break;
-
-					case "transaction":
-						// Server sending back the actual data after processing our transaction
-						if (message.mutations) {
-							begin();
-							for (const mutation of message.mutations) {
-								write({
-									type: mutation.type,
-									value: mutation.data,
-								});
-							}
-							commit();
-						}
-						break;
-				}
-			};
-
-			ws.onerror = (error) => {
-				console.error("WebSocket error:", error);
-				connectionState = "disconnected";
-			};
-
-			ws.onclose = () => {
-				connectionState = "disconnected";
-				// Auto-reconnect
-				if (!reconnectTimer) {
-					reconnectTimer = setTimeout(() => {
-						reconnectTimer = null;
-						connect();
-					}, config.reconnectInterval || 5000);
-				}
-			};
-		}
-
-		// Start connection
-		connect();
-
-		// Return cleanup function
 		return () => {
-			if (reconnectTimer) {
-				clearTimeout(reconnectTimer);
-				reconnectTimer = null;
-			}
-			if (ws) {
-				ws.close();
-				ws = null;
-			}
+			config.wsClient.removeMessageListener(onMessage);
 		};
 	};
 
