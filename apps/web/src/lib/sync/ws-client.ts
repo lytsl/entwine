@@ -29,7 +29,7 @@ export class WebSocketClient {
 	public reconnectInterval: number;
 	public onStateChange: (state: ConnectionState) => void;
 
-	public ws: WebSocket | null = null;
+	public ws: WebSocket;
 	public connectionState: ConnectionState = "disconnected";
 
 	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -80,7 +80,7 @@ export class WebSocketClient {
 
 	public connect(): void {
 		this._updateState("connecting");
-		this.ws = new WebSocket(this.url);
+		// this.ws = new WebSocket(this.url);
 
 		this.ws.onopen = () => {
 			this._updateState("connected");
