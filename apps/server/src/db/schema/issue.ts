@@ -28,8 +28,10 @@ export const issue = sqliteTable("issue", {
 });
 
 export const issueSchema = {
-	create: createInsertSchema(issue),
-	update: type({ id: "string", changes: createUpdateSchema(issue) })
+	create: type({ data: createInsertSchema(issue) })
+		.array()
+		.atLeastLength(1),
+	update: type({ id: "string", data: createUpdateSchema(issue) })
 		.array()
 		.atLeastLength(1),
 	select: createSelectSchema(issue),

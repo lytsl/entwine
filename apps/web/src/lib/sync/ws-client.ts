@@ -1,15 +1,31 @@
+import type { SyncableModels, SyncableModelType } from "@/utils/api";
+
 export type ConnectionState = "connecting" | "connected" | "disconnected";
 
 export interface WebSocketClientConfig {
-	url: string;
+	ws: WebSocket;
 	reconnectInterval?: number;
 	onStateChange?: (state: ConnectionState) => void;
 }
 
-export type MessageListener = (event: MessageEvent) => void;
+export interface WsSyncData<TModelName extends SyncableModels> {
+	id: number;
+	modelName: TModelName;
+	modelId: string;
+	action: "insert" | "update" | "delete";
+	data: SyncableModelType<TModelName>;
+	// transactionId?: string;
+}
+export type WsSyncMessage<TModelName extends SyncableModels> = {
+	cmd: "sync";
+	sync: Array<WsSyncData<TModelName>>;
+	lastSyncId: number;
+};
+export type MessageListener<TModelName extends SyncableModels> = (
+	data: Array<WsSyncData<TModelName>>,
+) => void;
 
 export class WebSocketClient {
-	public url: string;
 	public reconnectInterval: number;
 	public onStateChange: (state: ConnectionState) => void;
 
@@ -19,22 +35,36 @@ export class WebSocketClient {
 	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Store multiple listeners using a Set
-	private messageListeners: Set<MessageListener> = new Set();
+	private messageListeners = new Map<string, Set<MessageListener<any>>>();
 
 	constructor(config: WebSocketClientConfig) {
-		this.url = config.url;
+		this.ws = config.ws;
 		this.reconnectInterval = config.reconnectInterval || 5000;
 		this.onStateChange = config.onStateChange || (() => {});
 	}
 
 	// --- Listener Management ---
 
-	public addMessageListener(listener: MessageListener): void {
-		this.messageListeners.add(listener);
+	public addMessageListener<TModelName extends SyncableModels>(
+		eventFilter: { modelName: TModelName },
+		listener: MessageListener<TModelName>,
+	): void {
+		const listeners =
+			this.messageListeners.get(eventFilter.modelName) || new Set();
+		listeners.add(listener);
+		this.messageListeners.set(eventFilter.modelName, listeners);
 	}
 
-	public removeMessageListener(listener: MessageListener): void {
-		this.messageListeners.delete(listener);
+	public removeMessageListener<TModelName extends SyncableModels>(
+		eventFilter: { modelName: TModelName },
+		listener: MessageListener<TModelName>,
+	): void {
+		const listeners = this.messageListeners.get(eventFilter.modelName);
+		if (!listeners) return;
+		listeners.delete(listener);
+		if (!listeners.size) {
+			this.messageListeners.delete(eventFilter.modelName);
+		}
 	}
 
 	public clearAllListeners(): void {
@@ -59,10 +89,21 @@ export class WebSocketClient {
 		};
 
 		this.ws.onmessage = (event: MessageEvent) => {
+			const message: WsSyncMessage<SyncableModels> = JSON.parse(event.data);
 			// Broadcast the event to all registered listeners
-			this.messageListeners.forEach((listener) => {
-				listener(event);
-			});
+			if (message.cmd === "sync") {
+				const groupedMessages = Object.groupBy(
+					message.sync,
+					({ modelName }) => modelName,
+				);
+				for (const [modelName, syncItems] of Object.entries(groupedMessages)) {
+					const listeners = this.messageListeners.get(modelName);
+					if (!listeners) continue;
+					for (const listener of listeners) {
+						listener(syncItems);
+					}
+				}
+			}
 		};
 
 		this.ws.onerror = (error: Event) => {
@@ -89,7 +130,7 @@ export class WebSocketClient {
 		}
 		if (this.ws) {
 			this.ws.close();
-			this.ws = null;
+			// this.ws = null;
 		}
 	}
 }

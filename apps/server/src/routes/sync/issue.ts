@@ -7,24 +7,18 @@ import { parseTanstackOptions } from "@/sync/tanstack-db/drizzle-adapter";
 import { ParsedLoadSubsetOptions } from "@/sync/tanstack-db/types";
 
 const app = createPrivateApp()
-	.post(
-		"/",
-		arktypeValidator("json", issueSchema.create.array()),
-		async (c) => {
-			const data = await db
-				.insert(dbSchema.issue)
-				.values(c.req.valid("json"))
-				.returning();
-			return c.json(data, 201);
-		},
-	)
+	.post("/", arktypeValidator("json", issueSchema.create), async (c) => {
+		const payload = c.req.valid("json").map((item) => item.data);
+		const data = await db.insert(dbSchema.issue).values(payload).returning();
+		return c.json(data, 201);
+	})
 	.patch("/", arktypeValidator("json", issueSchema.update), async (c) => {
 		const payload = c.req.valid("json");
 
-		const queries = payload.map(({ id, changes }) =>
+		const queries = payload.map(({ id, data }) =>
 			db
 				.update(dbSchema.issue)
-				.set(changes)
+				.set(data)
 				.where(eq(dbSchema.issue.id, id))
 				.returning(),
 		);

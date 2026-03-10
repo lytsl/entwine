@@ -1,206 +1,206 @@
+import type { WithRequired } from "@entwine/utility/types";
 import {
-	createCollection,
-	type CollectionConfig,
-	type DeleteMutationFnParams,
-	type InsertMutationFnParams,
-	type SyncConfig,
-	type UpdateMutationFnParams,
-	type UtilsRecord,
+  type CollectionConfig,
+  createCollection,
+  type DeleteMutationFnParams,
+  eq,
+  type InsertMutationFnParams,
+  type LoadSubsetOptions,
+  parseLoadSubsetOptions,
+  type SyncConfig,
+  type UpdateMutationFnParams,
+  type UtilsRecord,
 } from "@tanstack/db";
-import type { WebSocketClient } from "./ws-client";
+import { z } from "zod";
+import {
+  honoClient,
+  type SyncableModels,
+  type SyncableModelType,
+  wsSyncClient,
+} from "@/utils/api";
+import type { MessageListener, WebSocketClient, WsSyncData } from "./ws-client";
+import { useLiveQuery } from "@tanstack/react-db";
 
-interface WebSocketMessage<T> {
-	type: "insert" | "update" | "delete" | "sync" | "transaction" | "ack";
-	data?: T | T[];
-	mutations?: Array<{
-		type: "insert" | "update" | "delete";
-		data: T;
-		id?: string;
-	}>;
-	transactionId?: string;
-	id?: string;
+interface WebSocketCollectionConfig<
+  TModelName extends SyncableModels,
+> extends Omit<
+  WithRequired<
+    CollectionConfig<
+      SyncableModelType<TModelName>,
+      SyncableModelType<TModelName>["id"],
+      z.ZodType<SyncableModelType<TModelName>>
+    >,
+    "schema"
+  >,
+  "onInsert" | "onUpdate" | "onDelete" | "sync" | "id"
+> {
+  wsClient: WebSocketClient;
+  modelName: TModelName;
+  syncMode: "on-demand";
+
+  // Note: onInsert/onUpdate/onDelete are handled by the WebSocket connection
+  // Users don't provide these handlers
 }
 
-interface WebSocketCollectionConfig<TItem extends object>
-	extends Omit<
-		CollectionConfig<TItem>,
-		"onInsert" | "onUpdate" | "onDelete" | "sync"
-	> {
-	wsClient: WebSocketClient;
+interface WebSocketUtils extends UtilsRecord {}
 
-	// Note: onInsert/onUpdate/onDelete are handled by the WebSocket connection
-	// Users don't provide these handlers
+export function webSocketCollectionOptions<TModelName extends SyncableModels>(
+  config: WebSocketCollectionConfig<TModelName>,
+): WithRequired<
+  CollectionConfig<
+    SyncableModelType<TModelName>,
+    SyncableModelType<TModelName>["id"],
+    z.ZodType<SyncableModelType<TModelName>>
+  >,
+  "schema"
+> & { utils: WebSocketUtils } {
+  type TItem = SyncableModelType<TModelName>;
+  type TKey = SyncableModelType<TModelName>["id"];
+  const apiPath = honoClient.sync[config.modelName];
+
+  const sync: SyncConfig<TItem, TKey>["sync"] = (params) => {
+    const { begin, write, commit, markReady } = params;
+
+    const onMessage: MessageListener<TModelName> = (
+      data: WsSyncData<TModelName>[],
+    ) => {
+      begin();
+      for (const item of data) {
+        switch (item.action) {
+          // case "sync":
+          //   // Initial sync with array of items
+          //   begin();
+          //   if (Array.isArray(message.data)) {
+          //     for (const item of message.data) {
+          //       write({ type: "insert", value: item });
+          //     }
+          //   }
+          //   commit();
+          //   markReady();
+          //   break;
+
+          case "insert":
+          case "update":
+          case "delete":
+            // Real-time updates from other clients
+            write({
+              type: item.action,
+              value: item.data,
+            });
+            break;
+
+          // case "ack":
+          //   // Server acknowledged our transaction
+          //   if (message.transactionId) {
+          //     const pending = pendingTransactions.get(message.transactionId);
+          //     if (pending) {
+          //       clearTimeout(pending.timeout);
+          //       pendingTransactions.delete(message.transactionId);
+          //       pending.resolve();
+          //     }
+          //   }
+          //   break;
+
+          // case "transaction":
+          //   // Server sending back the actual data after processing our transaction
+          //   if (message.mutations) {
+          //     begin();
+          //     for (const mutation of message.mutations) {
+          //       write({
+          //         type: mutation.type,
+          //         value: mutation.data,
+          //       });
+          //     }
+          //     commit();
+          //   }
+          //   break;
+        }
+      }
+      commit();
+    };
+
+    config.wsClient.addMessageListener(
+      { modelName: config.modelName },
+      onMessage,
+    );
+
+    return {
+      cleanup: () => {
+        config.wsClient.removeMessageListener(
+          { modelName: config.modelName },
+          onMessage,
+        );
+      },
+      loadSubset: async (options: LoadSubsetOptions) => {
+        const query: any = parseLoadSubsetOptions(options);
+        const response = await apiPath.$get({ query });
+        const data = await response.json();
+        begin();
+        if (Array.isArray(data)) {
+          for (const item of data) {
+            write({ type: "insert", value: item });
+          }
+        }
+        commit();
+        markReady();
+      },
+    };
+  };
+
+  const onInsert = async (params: InsertMutationFnParams<TItem, TKey>) => {
+    params.transaction.mutations[0]!.type;
+    await apiPath.$post({
+      json: params.transaction.mutations.map((mutation) => ({
+        data: mutation.modified,
+      })),
+    });
+  };
+
+  const onUpdate = async (params: UpdateMutationFnParams<TItem, TKey>) => {
+    await apiPath.$patch({
+      json: params.transaction.mutations.map((mutation) => ({
+        id: mutation.key,
+        data: mutation.changes,
+      })),
+    });
+  };
+
+  const onDelete = async (_params: DeleteMutationFnParams<TItem, TKey>) => {
+    throw new Error("Not implemented");
+  };
+
+  return {
+    id: config.modelName,
+    schema: config.schema,
+    getKey: config.getKey,
+    sync: { sync },
+    onInsert,
+    onUpdate,
+    onDelete,
+    utils: {},
+    syncMode: "on-demand",
+  };
 }
 
-interface WebSocketUtils extends UtilsRecord {
-	// reconnect: () => void;
-	// getConnectionState: () => "connected" | "disconnected" | "connecting";
-}
-
-export function webSocketCollectionOptions<TItem extends object>(
-	config: WebSocketCollectionConfig<TItem>,
-): CollectionConfig<TItem> & { utils: WebSocketUtils } {
-	// Track pending transactions awaiting acknowledgment
-	const pendingTransactions = new Map<
-		string,
-		{
-			resolve: () => void;
-			reject: (error: Error) => void;
-			timeout: NodeJS.Timeout;
-		}
-	>();
-
-	const sync: SyncConfig<TItem>["sync"] = (params) => {
-		const { begin, write, commit, markReady } = params;
-
-		const onMessage = (event: MessageEvent) => {
-			const message: WebSocketMessage<TItem> = JSON.parse(event.data);
-
-			switch (message.type) {
-				case "sync":
-					// Initial sync with array of items
-					begin();
-					if (Array.isArray(message.data)) {
-						for (const item of message.data) {
-							write({ type: "insert", value: item });
-						}
-					}
-					commit();
-					markReady();
-					break;
-
-				case "insert":
-				case "update":
-				case "delete":
-					// Real-time updates from other clients
-					begin();
-					write({
-						type: message.type,
-						value: message.data as TItem,
-					});
-					commit();
-					break;
-
-				case "ack":
-					// Server acknowledged our transaction
-					if (message.transactionId) {
-						const pending = pendingTransactions.get(message.transactionId);
-						if (pending) {
-							clearTimeout(pending.timeout);
-							pendingTransactions.delete(message.transactionId);
-							pending.resolve();
-						}
-					}
-					break;
-
-				case "transaction":
-					// Server sending back the actual data after processing our transaction
-					if (message.mutations) {
-						begin();
-						for (const mutation of message.mutations) {
-							write({
-								type: mutation.type,
-								value: mutation.data,
-							});
-						}
-						commit();
-					}
-					break;
-			}
-		};
-
-		config.wsClient.addMessageListener(onMessage);
-
-		return () => {
-			config.wsClient.removeMessageListener(onMessage);
-		};
-	};
-
-	// Helper function to send transaction and wait for server acknowledgment
-	const sendTransaction = async (
-		params:
-			| InsertMutationFnParams<TItem>
-			| UpdateMutationFnParams<TItem>
-			| DeleteMutationFnParams<TItem>,
-	): Promise<void> => {
-		if (ws?.readyState !== WebSocket.OPEN) {
-			throw new Error("WebSocket not connected");
-		}
-
-		const transactionId = crypto.randomUUID();
-
-		// Convert all mutations in the transaction to the wire format
-		const mutations = params.transaction.mutations.map((mutation) => ({
-			type: mutation.type,
-			id: mutation.key,
-			data:
-				mutation.type === "delete"
-					? undefined
-					: mutation.type === "update"
-						? mutation.changes
-						: mutation.modified,
-		}));
-
-		// Send the entire transaction at once
-		ws.send(
-			JSON.stringify({
-				type: "transaction",
-				transactionId,
-				mutations,
-			}),
-		);
-
-		// Wait for server acknowledgment
-		return new Promise<void>((resolve, reject) => {
-			const timeout = setTimeout(() => {
-				pendingTransactions.delete(transactionId);
-				reject(new Error(`Transaction ${transactionId} timed out`));
-			}, 10000); // 10 second timeout
-
-			pendingTransactions.set(transactionId, {
-				resolve,
-				reject,
-				timeout,
-			});
-		});
-	};
-
-	// All mutation handlers use the same transaction sender
-	const onInsert = async (params: InsertMutationFnParams<TItem>) => {
-		await sendTransaction(params);
-	};
-
-	const onUpdate = async (params: UpdateMutationFnParams<TItem>) => {
-		await sendTransaction(params);
-	};
-
-	const onDelete = async (params: DeleteMutationFnParams<TItem>) => {
-		await sendTransaction(params);
-	};
-
-	return {
-		id: config.id,
-		schema: config.schema,
-		getKey: config.getKey,
-		sync: { sync },
-		onInsert,
-		onUpdate,
-		onDelete,
-		utils: {
-			// reconnect: () => {
-			// 	if (ws) ws.close();
-			// 	connect();
-			// },
-			getConnectionState: () => connectionState,
-		},
-	};
-}
-
-export const wsCollection = createCollection(
-	webSocketCollectionOptions({
-		url: "ws://localhost:4001/ws",
-		getKey: (todo: any) => todo.id,
-		// schema: todoSchema
-		// Note: No onInsert/onUpdate/onDelete - handled by WebSocket automatically
-	}),
+export const issueCollection = createCollection(
+  webSocketCollectionOptions({
+    wsClient: wsSyncClient,
+    getKey: (todo) => todo.id,
+    schema: z.object({
+      id: z.string(),
+      title: z.string(),
+      description: z.string(),
+      rank: z.string(),
+    }),
+    modelName: "issue",
+    syncMode: "on-demand",
+  }),
 );
+
+export const useCollectionData = () =>
+  useLiveQuery((q) =>
+    q
+      .from({ issue: issueCollection })
+      .orderBy(({ issue }) => issue.rank, "asc")
+      .limit(10),
+  );

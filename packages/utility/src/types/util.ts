@@ -9,3 +9,5 @@ export type Nullable<T> = { [K in keyof T]: T[K] | null };
 export type AsNonEmptyArray<T extends any[]> = T extends (infer U)[]
 	? [U, ...U[]]
 	: never;
+
+export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
