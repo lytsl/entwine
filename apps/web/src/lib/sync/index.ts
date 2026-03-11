@@ -3,7 +3,6 @@ import {
 	type CollectionConfig,
 	createCollection,
 	type DeleteMutationFnParams,
-	eq,
 	type InsertMutationFnParams,
 	type LoadSubsetOptions,
 	parseLoadSubsetOptions,
@@ -11,6 +10,7 @@ import {
 	type UpdateMutationFnParams,
 	type UtilsRecord,
 } from "@tanstack/db";
+import { useLiveQuery } from "@tanstack/react-db";
 import { z } from "zod";
 import {
 	honoClient,
@@ -18,8 +18,7 @@ import {
 	type SyncableModelType,
 	wsSyncClient,
 } from "@/utils/api";
-import type { MessageListener, WebSocketClient, WsSyncData } from "./ws-client";
-import { useLiveQuery } from "@tanstack/react-db";
+import type { MessageListener, WebSocketClient } from "./ws-client";
 
 interface WebSocketCollectionConfig<TModelName extends SyncableModels>
 	extends Omit<
@@ -60,11 +59,9 @@ export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 	const sync: SyncConfig<TItem, TKey>["sync"] = (params) => {
 		const { begin, write, commit, markReady } = params;
 
-		const onMessage: MessageListener<TModelName> = (
-			data: WsSyncData<TModelName>[],
-		) => {
+		const onMessage: MessageListener<TModelName> = (data) => {
 			begin();
-			for (const item of data) {
+			for (const item of data.sync) {
 				switch (item.action) {
 					// case "sync":
 					//   // Initial sync with array of items

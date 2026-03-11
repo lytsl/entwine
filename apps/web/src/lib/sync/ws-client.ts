@@ -22,7 +22,7 @@ export type WsSyncMessage<TModelName extends SyncableModels> = {
 	lastSyncId: number;
 };
 export type MessageListener<TModelName extends SyncableModels> = (
-	data: Array<WsSyncData<TModelName>>,
+	data: WsSyncMessage<TModelName>,
 ) => void;
 
 export class WebSocketClient {
@@ -96,11 +96,11 @@ export class WebSocketClient {
 					message.sync,
 					({ modelName }) => modelName,
 				);
-				for (const [modelName, syncItems] of Object.entries(groupedMessages)) {
+				for (const [modelName, sync] of Object.entries(groupedMessages)) {
 					const listeners = this.messageListeners.get(modelName);
 					if (!listeners) continue;
 					for (const listener of listeners) {
-						listener(syncItems);
+						listener({ ...message, sync });
 					}
 				}
 			}

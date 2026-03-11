@@ -10,6 +10,7 @@ const app = createPrivateApp()
 	.post("/", arktypeValidator("json", issueSchema.create), async (c) => {
 		const payload = c.req.valid("json").map((item) => item.data);
 		const data = await db.insert(dbSchema.issue).values(payload).returning();
+		c.env.server.publish("org", JSON.stringify(data));
 		return c.json(data, 201);
 	})
 	.patch("/", arktypeValidator("json", issueSchema.update), async (c) => {
@@ -25,7 +26,7 @@ const app = createPrivateApp()
 		const data = (
 			await db.batch(queries as unknown as [any, ...any[]])
 		).flat() as Awaited<(typeof queries)[number]>;
-
+		c.env.server.publish("org", JSON.stringify(data));
 		return c.json(data);
 	})
 	.get("/", arktypeValidator("query", ParsedLoadSubsetOptions), async (c) => {

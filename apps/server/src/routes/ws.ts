@@ -1,33 +1,27 @@
 import type { ServerWebSocket } from "bun";
 import { Hono } from "hono";
-import { upgradeWebSocket, websocket } from "hono/bun";
-import type { WSContext } from "hono/ws";
+import { upgradeWebSocket } from "hono/bun";
+import type { THonoBaseEnv } from "./types";
 
-export const orgWsClientMap = new Map<string, Set<WSContext<any>>>();
+// const orgWsClientMap = new Map<string, Set<WSContext<any>>>();
 
-const app = new Hono().get(
+const app = new Hono<THonoBaseEnv>().get(
 	"/",
 	upgradeWebSocket((_c) => {
 		return {
-			onMessage(event, ws) {
-				console.log(`Message from client: ${event.data}`);
-				// ws.send(JSON.stringify({ message: "Hello" }));
+			onClose: (_evt, wsCtx) => {
+				const ws = wsCtx.raw as ServerWebSocket;
+				ws.unsubscribe("org");
 			},
-			onClose: (evt, ws) => {
-				console.debug("Connection closed", evt, ws);
-				const clientSet = orgWsClientMap.get("org") || new Set<typeof ws>();
-				clientSet.delete(ws);
-				if (clientSet.size) orgWsClientMap.set("org", clientSet);
-				else orgWsClientMap.delete("org");
+			onOpen: (_evt, wsCtx) => {
+				const ws = wsCtx.raw as ServerWebSocket;
+				ws.subscribe("org");
 			},
-			onOpen: (evt, ws) => {
-				console.debug("Connection opened", evt, ws);
-				const clientSet = orgWsClientMap.get("org") || new Set<typeof ws>();
-				clientSet.add(ws);
-				orgWsClientMap.set("org", clientSet);
+			onMessage(evt) {
+				console.debug("Message from client: ", evt.data);
 			},
-			onError: (evt, ws) => {
-				console.error(evt, ws);
+			onError: (evt) => {
+				console.error(evt);
 			},
 		};
 	}),

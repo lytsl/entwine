@@ -1,18 +1,17 @@
-import type { Nullable } from "@entwine/utility/types";
-import { Hono } from "hono";
-import { websocket } from "hono/bun";
+import type { Server } from "bun";
+import { type ExecutionContext, Hono } from "hono";
+import { type BunWebSocketData, websocket } from "hono/bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { auth, type BetterAuthSession } from "@/auth/better-auth";
+import { auth } from "@/auth/better-auth";
 import origanizationRouter from "@/routes/auth/organization";
 import issueSyncRouter from "@/routes/sync/issue";
 import todoRouter from "@/routes/todo";
 import wsRouter from "@/routes/ws";
 import { env } from "../env";
+import type { THonoBaseEnv } from "./routes/types";
 
-const app = new Hono<{
-	Variables: Nullable<BetterAuthSession>;
-}>()
+const app = new Hono<THonoBaseEnv>()
 	.use(logger())
 	.use(
 		"/*",
@@ -60,8 +59,14 @@ const app = new Hono<{
 
 export type AppType = typeof app;
 
-export default {
+const server: Server<BunWebSocketData> = Bun.serve({
 	port: env.PORT,
-	fetch: app.fetch,
+	fetch: (request: Request, Env?: unknown, executionCtx?: ExecutionContext) => {
+		return app.fetch(request, { ...(Env || {}), server }, executionCtx);
+	},
 	websocket,
-};
+});
+
+// server.pu
+
+// export default server;
