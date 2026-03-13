@@ -7,10 +7,12 @@ import {
 	type LoadSubsetOptions,
 	parseLoadSubsetOptions,
 	type SyncConfig,
+	TanStackDBError,
 	type UpdateMutationFnParams,
 	type UtilsRecord,
 } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
+import { Store } from "@tanstack/react-store";
 import { z } from "zod";
 import {
 	honoClient,
@@ -42,6 +44,20 @@ interface WebSocketCollectionConfig<TModelName extends SyncableModels>
 
 interface WebSocketUtils extends UtilsRecord {}
 
+export class TrailBaseDBCollectionError extends TanStackDBError {
+	constructor(message: string) {
+		super(message);
+		this.name = "TrailBaseDBCollectionError";
+	}
+}
+
+export class TimeoutWaitingForIdsError extends TrailBaseDBCollectionError {
+	constructor(ids: string | number) {
+		super(`Timeout waiting for ids: ${ids}`);
+		this.name = "TimeoutWaitingForIdsError";
+	}
+}
+
 export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 	config: WebSocketCollectionConfig<TModelName>,
 ): WithRequired<
@@ -55,6 +71,37 @@ export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 	type TItem = SyncableModelType<TModelName>;
 	type TKey = SyncableModelType<TModelName>["id"];
 	const apiPath = honoClient.sync[config.modelName];
+
+	const lastSyncId = new Store(0);
+
+	const awaitLastSyncId = (
+		syncId: number,
+		timeout: number = 120 * 1000,
+	): Promise<void> => {
+		if (typeof syncId !== "number") {
+			console.error("Invalid last sync id", syncId);
+			return Promise.resolve();
+		}
+		const completed = (lastSyncId: number) => lastSyncId >= syncId;
+		if (completed(lastSyncId.state)) {
+			return Promise.resolve();
+		}
+
+		return new Promise<void>((resolve, reject) => {
+			const timeoutId = setTimeout(() => {
+				unsubscribe();
+				reject(new TimeoutWaitingForIdsError(syncId));
+			}, timeout);
+
+			const { unsubscribe } = lastSyncId.subscribe((value) => {
+				if (completed(value)) {
+					clearTimeout(timeoutId);
+					unsubscribe();
+					resolve();
+				}
+			});
+		});
+	};
 
 	const sync: SyncConfig<TItem, TKey>["sync"] = (params) => {
 		const { begin, write, commit, markReady } = params;
@@ -113,6 +160,10 @@ export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 				}
 			}
 			commit();
+
+			if (typeof data.lastSyncId === "number") {
+				lastSyncId.setState(() => data.lastSyncId);
+			}
 		};
 
 		config.wsClient.addMessageListener(
@@ -145,21 +196,26 @@ export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 	};
 
 	const onInsert = async (params: InsertMutationFnParams<TItem, TKey>) => {
-		params.transaction.mutations[0]!.type;
-		await apiPath.$post({
-			json: params.transaction.mutations.map((mutation) => ({
-				data: mutation.modified,
-			})),
-		});
+		const data = await apiPath
+			.$post({
+				json: params.transaction.mutations.map((mutation) => ({
+					data: mutation.modified,
+				})),
+			})
+			.then((res) => res.json());
+		awaitLastSyncId(data?.lastSyncId);
 	};
 
 	const onUpdate = async (params: UpdateMutationFnParams<TItem, TKey>) => {
-		await apiPath.$patch({
-			json: params.transaction.mutations.map((mutation) => ({
-				id: mutation.key,
-				data: mutation.changes,
-			})),
-		});
+		const data = await apiPath
+			.$patch({
+				json: params.transaction.mutations.map((mutation) => ({
+					id: mutation.key,
+					data: mutation.changes,
+				})),
+			})
+			.then((res) => res.json());
+		awaitLastSyncId(data?.lastSyncId);
 	};
 
 	const onDelete = async (_params: DeleteMutationFnParams<TItem, TKey>) => {

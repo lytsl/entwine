@@ -9,25 +9,86 @@ import { ParsedLoadSubsetOptions } from "@/sync/tanstack-db/types";
 const app = createPrivateApp()
 	.post("/", arktypeValidator("json", issueSchema.create), async (c) => {
 		const payload = c.req.valid("json").map((item) => item.data);
-		const data = await db.insert(dbSchema.issue).values(payload).returning();
-		c.env.server.publish("org", JSON.stringify(data));
-		return c.json(data, 201);
+
+		const syncData = await db.transaction(async (tx) => {
+			const insertData = await tx
+				.insert(dbSchema.issue)
+				.values(payload)
+				.returning();
+			const syncData = await tx
+				.insert(dbSchema.sync)
+				.values(
+					insertData.map((data) => ({
+						modelName: "issue",
+						modelId: data.id,
+						action: "insert" as const,
+						data: data,
+					})),
+				)
+				.returning();
+			return syncData;
+		});
+
+		const lastSyncId = syncData.reduce((mx, item) => Math.max(mx, item.id), 0);
+		c.env.server.publish(
+			"org",
+			JSON.stringify({
+				cmd: "sync",
+				sync: syncData,
+				lastSyncId,
+			}),
+		);
+		return c.json({ lastSyncId }, 201);
 	})
 	.patch("/", arktypeValidator("json", issueSchema.update), async (c) => {
 		const payload = c.req.valid("json");
 
-		const queries = payload.map(({ id, data }) =>
-			db
-				.update(dbSchema.issue)
-				.set(data)
-				.where(eq(dbSchema.issue.id, id))
-				.returning(),
+		const syncData = await db.transaction(async (tx) => {
+			const updateData = (
+				await Promise.all(
+					payload.map(({ id, data }) =>
+						tx
+							.update(dbSchema.issue)
+							.set(data)
+							.where(eq(dbSchema.issue.id, id))
+							.returning(),
+					) as unknown as [any, ...any[]],
+				)
+			).flat();
+			console.log(
+				updateData,
+				updateData.map((data) => ({
+					modelName: "issue",
+					modelId: data.id,
+					action: "update" as const,
+					data: data,
+				})),
+			);
+
+			const syncData = await tx
+				.insert(dbSchema.sync)
+				.values(
+					updateData.map((data) => ({
+						modelName: "issue",
+						modelId: data.id,
+						action: "update" as const,
+						data: data,
+					})),
+				)
+				.returning();
+			return syncData;
+		});
+
+		const lastSyncId = syncData.reduce((mx, item) => Math.max(mx, item.id), 0);
+		c.env.server.publish(
+			"org",
+			JSON.stringify({
+				cmd: "sync",
+				sync: syncData,
+				lastSyncId,
+			}),
 		);
-		const data = (
-			await db.batch(queries as unknown as [any, ...any[]])
-		).flat() as Awaited<(typeof queries)[number]>;
-		c.env.server.publish("org", JSON.stringify(data));
-		return c.json(data);
+		return c.json({ lastSyncId }, 201);
 	})
 	.get("/", arktypeValidator("query", ParsedLoadSubsetOptions), async (c) => {
 		const query = c.req.valid("query");

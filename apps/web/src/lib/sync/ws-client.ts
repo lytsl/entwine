@@ -41,6 +41,8 @@ export class WebSocketClient {
 		this.ws = config.ws;
 		this.reconnectInterval = config.reconnectInterval || 5000;
 		this.onStateChange = config.onStateChange || (() => {});
+
+		this.connect();
 	}
 
 	// --- Listener Management ---
