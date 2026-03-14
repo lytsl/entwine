@@ -2,18 +2,25 @@ import type { Type } from "arktype";
 import type {
 	ColumnBaseConfig,
 	ColumnBuilderBaseConfig,
-	ColumnDataType,
+	ColumnBuilderExtraConfig,
+	ColumnType,
 } from "drizzle-orm";
 import { SQLiteColumn, SQLiteColumnBuilder } from "drizzle-orm/sqlite-core";
 
 declare module "drizzle-orm/sqlite-core" {
 	interface SQLiteColumnBuilder<
-		T extends ColumnBuilderBaseConfig<ColumnDataType, string>,
+		T extends
+			ColumnBuilderBaseConfig<ColumnType> = ColumnBuilderBaseConfig<ColumnType>,
+		TRuntimeConfig extends object = object,
+		TExtraConfig extends ColumnBuilderExtraConfig = object,
 	> {
 		meta(metadata: Record<string, any>): this;
 		arktype(schema: Type): this;
 	}
-	interface SQLiteColumn<T extends ColumnBaseConfig<ColumnDataType, string>> {
+	interface SQLiteColumn<
+		T extends ColumnBaseConfig<ColumnType> = ColumnBaseConfig<ColumnType>,
+		TRuntimeConfig extends object = {},
+	> {
 		readonly meta: Record<string, any> | undefined;
 		readonly arktype: Type | undefined;
 	}

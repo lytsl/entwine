@@ -1,10 +1,10 @@
+import { type } from "arktype";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
-} from "@entwine/drizzle-arktype";
-import { type } from "arktype";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+} from "../drizzle-arktype";
 
 export const todo = sqliteTable("todo", {
 	id: integer().primaryKey({ autoIncrement: true }),

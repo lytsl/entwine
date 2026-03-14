@@ -22,7 +22,6 @@
 		"db:migrate": "drizzle-kit migrate"
 	},
 	"dependencies": {
-		"@entwine/drizzle-arktype": "workspace:*",
 		"@entwine/sync": "workspace:*",
 		"@entwine/utility": "workspace:*",
 		"@hono/arktype-validator": "^2.0.1",
