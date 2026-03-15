@@ -1,13 +1,15 @@
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { env } from "../../env";
-import * as schema from "./schema";
-import { createDrizzleExtension } from "./utils/sync-extension";
+import dbSchema from "./schema";
+import relations from "./schema/relations";
+
+// import { createDrizzleExtension } from "./utils/sync-extension";
 
 const client = createClient({
-	url: env.DATABASE_URL,
+  url: env.DATABASE_URL,
 });
 
-export const db = createDrizzleExtension(drizzle({ client, schema }));
+export const db = drizzle({ client, schema: dbSchema, relations });
 
-export const dbSchema = schema;
+export { dbSchema };
