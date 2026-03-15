@@ -1,5 +1,5 @@
 import { arktypeValidator } from "@hono/arktype-validator";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { createPrivateApp } from "@/auth/auth.factory";
 import { dbManager } from "@/db/db-manager";
 import orgSchema from "@/db/schema-org";
@@ -58,6 +58,19 @@ const app = createPrivateApp()
 					) as unknown as [any, ...any[]],
 				)
 			).flat();
+
+			await tx
+				.delete(orgSchema.sync)
+				.where(
+					or(
+						...updateData.map((updateItem) =>
+							and(
+								eq(orgSchema.sync.modelId, updateItem.id),
+								eq(orgSchema.sync.modelName, "issue"),
+							),
+						),
+					),
+				);
 
 			const syncData = await tx
 				.insert(orgSchema.sync)
