@@ -20,24 +20,40 @@ class DatabaseManager {
 		relations: mainRelations,
 	});
 
-	// Cache for organization-specific connections
-	private tenantConnections = new Map<string, ReturnType<typeof drizzle>>();
+	private orgConnections = new Map<string, ReturnType<typeof drizzle>>();
+	private pendingConnections = new Map<
+		string,
+		Promise<ReturnType<typeof drizzle>>
+	>();
 
-	/**
-	 * Retrieves or initializes a database connection for a specific organization.
-	 */
 	async getOrgDb(organizationId: string) {
-		// Return cached connection if it exists
-		if (this.tenantConnections.has(organizationId)) {
-			return this.tenantConnections.get(organizationId)!;
+		if (this.orgConnections.has(organizationId)) {
+			return this.orgConnections.get(organizationId)!;
 		}
 
+		if (this.pendingConnections.has(organizationId)) {
+			return this.pendingConnections.get(organizationId)!;
+		}
+
+		const initPromise = this._initializeOrgDb(organizationId);
+		this.pendingConnections.set(organizationId, initPromise);
+
+		try {
+			const orgDb = await initPromise;
+			return orgDb;
+		} finally {
+			this.pendingConnections.delete(organizationId);
+		}
+	}
+
+	private async _initializeOrgDb(organizationId: string) {
 		const dbPath = path.join(
 			appRoot,
 			env.ORG_FOLDER_PATH,
 			`${organizationId}.sqlite`,
 		);
 		const isNewDatabase = !fs.existsSync(dbPath);
+
 		if (isNewDatabase) {
 			fs.copyFileSync(path.join(appRoot, env.ORG_DATABASE_PATH), dbPath);
 		} else {
@@ -54,27 +70,20 @@ class DatabaseManager {
 				env.ORG_FOLDER_PATH,
 				`${organizationId}.config.ts`,
 			);
+
 			fs.writeFileSync(configPath, orgConfig);
 			await execAsync(
 				`bunx drizzle-kit migrate --ignore-conflicts --config=${configPath}`,
 			);
-			console.log(
-				`bunx drizzle-kit migrate --ignore-conflicts --config=${configPath}`,
-			);
-			// fs.unlinkSync(configPath);
+			fs.unlinkSync(configPath);
 		}
 
 		const client = createClient({ url: `file:${dbPath}` });
-		// client.pragma("journal_mode = WAL");
+		const orgDb = drizzle({ client, schema: orgSchema });
+		this.orgConnections.set(organizationId, orgDb);
 
-		const tenantDb = drizzle({ client, schema: orgSchema });
-
-		// Cache the connection for future requests in the same lifecycle
-		this.tenantConnections.set(organizationId, tenantDb);
-
-		return tenantDb;
+		return orgDb;
 	}
 }
 
-// Export a single instance to be used throughout the app
 export const dbManager = new DatabaseManager();
