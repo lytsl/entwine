@@ -14,6 +14,7 @@
 		"@atlaskit/pragmatic-drag-and-drop": "^1.7.9",
 		"@base-ui/react": "^1.1.0",
 		"@entwine/hono-react-query": "workspace:*",
+		"@entwine/server": "workspace:*",
 		"@entwine/utility": "workspace:*",
 		"@fontsource-variable/inter": "^5.2.8",
 		"@kayron013/lexorank": "^2.0.0",
@@ -35,6 +36,7 @@
 		"dotenv": "catalog:",
 		"hono": "^4.11.7",
 		"idb": "^8.0.3",
+		"ky": "^1.14.3",
 		"lexorank": "^1.0.5",
 		"lucide-react": "^0.473.0",
 		"motion": "^12.35.0",
@@ -52,7 +54,6 @@
 	},
 	"devDependencies": {
 		"@entwine/config": "workspace:*",
-		"@entwine/server": "workspace:*",
 		"@tanstack/react-query-devtools": "^5.91.3",
 		"@tanstack/react-router-devtools": "^1.157.18",
 		"@tanstack/router-plugin": "^1.157.18",

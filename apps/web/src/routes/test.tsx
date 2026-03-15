@@ -33,8 +33,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { issueCollection } from "@/collections/issue";
 // import { issueCollection } from "@/collections/issue";
-import { issueCollection } from "@/lib/sync";
 
 // --- Types ---
 interface Item {

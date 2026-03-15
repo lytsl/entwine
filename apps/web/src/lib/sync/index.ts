@@ -1,7 +1,6 @@
 import type { WithRequired } from "@entwine/utility/types";
 import {
 	type CollectionConfig,
-	createCollection,
 	type DeleteMutationFnParams,
 	type InsertMutationFnParams,
 	type LoadSubsetOptions,
@@ -11,32 +10,19 @@ import {
 	type UpdateMutationFnParams,
 	type UtilsRecord,
 } from "@tanstack/db";
-import { useLiveQuery } from "@tanstack/react-db";
 import { Store } from "@tanstack/react-store";
-import { z } from "zod";
-import {
-	honoClient,
-	type SyncableModels,
-	type SyncableModelType,
-	wsSyncClient,
-} from "@/utils/api";
+import type { z } from "zod";
 import type { MessageListener, WebSocketClient } from "./ws-client";
+import { api } from "@/utils/api";
 
-interface WebSocketCollectionConfig<TModelName extends SyncableModels>
+interface WebSocketCollectionConfig<T extends object = Record<string, unknown>>
 	extends Omit<
-		WithRequired<
-			CollectionConfig<
-				SyncableModelType<TModelName>,
-				SyncableModelType<TModelName>["id"],
-				z.ZodType<SyncableModelType<TModelName>>
-			>,
-			"schema"
-		>,
+		WithRequired<CollectionConfig<T, string, z.ZodType<T>>, "schema">,
 		"onInsert" | "onUpdate" | "onDelete" | "sync" | "id"
 	> {
 	wsClient: WebSocketClient;
-	modelName: TModelName;
-	syncMode: "on-demand";
+	modelName: string;
+	apiPath: string;
 
 	// Note: onInsert/onUpdate/onDelete are handled by the WebSocket connection
 	// Users don't provide these handlers
@@ -58,20 +44,13 @@ export class TimeoutWaitingForIdsError extends TrailBaseDBCollectionError {
 	}
 }
 
-export function webSocketCollectionOptions<TModelName extends SyncableModels>(
-	config: WebSocketCollectionConfig<TModelName>,
-): WithRequired<
-	CollectionConfig<
-		SyncableModelType<TModelName>,
-		SyncableModelType<TModelName>["id"],
-		z.ZodType<SyncableModelType<TModelName>>
-	>,
-	"schema"
-> & { utils: WebSocketUtils } {
-	type TItem = SyncableModelType<TModelName>;
-	type TKey = SyncableModelType<TModelName>["id"];
-	const apiPath = honoClient.sync[config.modelName];
-
+export function webSocketCollectionOptions<
+	T extends object = Record<string, unknown>,
+>(
+	config: WebSocketCollectionConfig<T>,
+): WithRequired<CollectionConfig<T, string, z.ZodType<T>>, "schema"> & {
+	utils: WebSocketUtils;
+} {
 	const lastSyncId = new Store(0);
 
 	const awaitLastSyncId = (
@@ -103,10 +82,10 @@ export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 		});
 	};
 
-	const sync: SyncConfig<TItem, TKey>["sync"] = (params) => {
+	const sync: SyncConfig<T, string>["sync"] = (params) => {
 		const { begin, write, commit, markReady } = params;
 
-		const onMessage: MessageListener<TModelName> = (data) => {
+		const onMessage: MessageListener<T> = (data) => {
 			begin();
 			for (const item of data.sync) {
 				switch (item.action) {
@@ -182,7 +161,9 @@ export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 			},
 			loadSubset: async (options: LoadSubsetOptions) => {
 				const query: any = parseLoadSubsetOptions(options);
-				const response = await apiPath.$get({ query });
+				const response = await api.get(config.apiPath, {
+					searchParams: { query: JSON.stringify(query) },
+				});
 				const data = await response.json();
 				begin();
 				if (Array.isArray(data)) {
@@ -195,30 +176,30 @@ export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 		};
 	};
 
-	const onInsert = async (params: InsertMutationFnParams<TItem, TKey>) => {
-		const data = await apiPath
-			.$post({
+	const onInsert = async (params: InsertMutationFnParams<T, string>) => {
+		const data = await api
+			.post(config.apiPath, {
 				json: params.transaction.mutations.map((mutation) => ({
 					data: mutation.modified,
 				})),
 			})
-			.then((res) => res.json());
+			.json<{ lastSyncId: number }>();
 		awaitLastSyncId(data?.lastSyncId);
 	};
 
-	const onUpdate = async (params: UpdateMutationFnParams<TItem, TKey>) => {
-		const data = await apiPath
-			.$patch({
+	const onUpdate = async (params: UpdateMutationFnParams<T, string>) => {
+		const data = await api
+			.patch(config.apiPath, {
 				json: params.transaction.mutations.map((mutation) => ({
 					id: mutation.key,
 					data: mutation.changes,
 				})),
 			})
-			.then((res) => res.json());
+			.json<{ lastSyncId: number }>();
 		awaitLastSyncId(data?.lastSyncId);
 	};
 
-	const onDelete = async (_params: DeleteMutationFnParams<TItem, TKey>) => {
+	const onDelete = async (_params: DeleteMutationFnParams<T, string>) => {
 		throw new Error("Not implemented");
 	};
 
@@ -234,26 +215,3 @@ export function webSocketCollectionOptions<TModelName extends SyncableModels>(
 		syncMode: "on-demand",
 	};
 }
-
-export const issueCollection = createCollection(
-	webSocketCollectionOptions({
-		wsClient: wsSyncClient,
-		getKey: (todo) => todo.id,
-		schema: z.object({
-			id: z.string(),
-			title: z.string(),
-			description: z.string(),
-			rank: z.string(),
-		}),
-		modelName: "issue",
-		syncMode: "on-demand",
-	}),
-);
-
-export const useCollectionData = () =>
-	useLiveQuery((q) =>
-		q
-			.from({ issue: issueCollection })
-			.orderBy(({ issue }) => issue.rank, "asc")
-			.limit(10),
-	);

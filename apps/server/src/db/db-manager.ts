@@ -4,11 +4,11 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
+import { appRoot } from "@/utils/app-root";
 import { env } from "../../env";
 import mainSchema from "./schema-main";
 import mainRelations from "./schema-main/relations";
 import orgSchema from "./schema-org";
-import { appRoot } from "@/utils/app-root";
 
 const execAsync = promisify(exec);
 

@@ -1,5 +1,5 @@
 import { arktypeValidator } from "@hono/arktype-validator";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { createPrivateApp } from "@/auth/auth.factory";
 import { dbManager } from "@/db/db-manager";
 import orgSchema from "@/db/schema-org";

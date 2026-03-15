@@ -9,7 +9,6 @@ import issueSyncRouter from "@/routes/sync/issue";
 import wsRouter from "@/routes/ws";
 import { env } from "../env";
 import type { THonoBaseEnv } from "./routes/types";
-import path from "node:path";
 
 const app = new Hono<THonoBaseEnv>()
 	.use(logger())

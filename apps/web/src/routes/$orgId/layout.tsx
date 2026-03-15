@@ -1,29 +1,14 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { apiQuery } from "@/utils/api";
 import { AppSidebar } from "./-components/app-sidebar";
 
 export const Route = createFileRoute("/$orgId")({
 	component: RouteComponent,
 	beforeLoad: async ({ context, params }) => {
-		const orgSession = await apiQuery.api.auth.organization[
-			"get-session"
-		].$get.call({ query: { slug: params.orgId } });
-		if (!orgSession.ok) {
-			if (orgSession.status === 403) {
-				throw redirect({
-					to: "/",
-				});
-			}
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const session = await orgSession.json();
+		params.orgId;
 
 		return {
 			...context,
-			session,
 		};
 	},
 });

@@ -1,5 +1,3 @@
-import type { SyncableModels, SyncableModelType } from "@/utils/api";
-
 export type ConnectionState = "connecting" | "connected" | "disconnected";
 
 export interface WebSocketClientConfig {
@@ -8,21 +6,21 @@ export interface WebSocketClientConfig {
 	onStateChange?: (state: ConnectionState) => void;
 }
 
-export interface WsSyncData<TModelName extends SyncableModels> {
+export interface WsSyncData<T extends object = Record<string, unknown>> {
 	id: number;
-	modelName: TModelName;
+	modelName: string;
 	modelId: string;
 	action: "insert" | "update" | "delete";
-	data: SyncableModelType<TModelName>;
+	data: T;
 	// transactionId?: string;
 }
-export type WsSyncMessage<TModelName extends SyncableModels> = {
+export type WsSyncMessage<T extends object = Record<string, unknown>> = {
 	cmd: "sync";
-	sync: Array<WsSyncData<TModelName>>;
+	sync: Array<WsSyncData<T>>;
 	lastSyncId: number;
 };
-export type MessageListener<TModelName extends SyncableModels> = (
-	data: WsSyncMessage<TModelName>,
+export type MessageListener<T extends object = Record<string, unknown>> = (
+	data: WsSyncMessage<T>,
 ) => void;
 
 export class WebSocketClient {
@@ -47,9 +45,9 @@ export class WebSocketClient {
 
 	// --- Listener Management ---
 
-	public addMessageListener<TModelName extends SyncableModels>(
-		eventFilter: { modelName: TModelName },
-		listener: MessageListener<TModelName>,
+	public addMessageListener<T extends object = Record<string, unknown>>(
+		eventFilter: { modelName: string },
+		listener: MessageListener<T>,
 	): void {
 		const listeners =
 			this.messageListeners.get(eventFilter.modelName) || new Set();
@@ -57,9 +55,9 @@ export class WebSocketClient {
 		this.messageListeners.set(eventFilter.modelName, listeners);
 	}
 
-	public removeMessageListener<TModelName extends SyncableModels>(
-		eventFilter: { modelName: TModelName },
-		listener: MessageListener<TModelName>,
+	public removeMessageListener<T extends object = Record<string, unknown>>(
+		eventFilter: { modelName: string },
+		listener: MessageListener<T>,
 	): void {
 		const listeners = this.messageListeners.get(eventFilter.modelName);
 		if (!listeners) return;
@@ -91,7 +89,7 @@ export class WebSocketClient {
 		};
 
 		this.ws.onmessage = (event: MessageEvent) => {
-			const message: WsSyncMessage<SyncableModels> = JSON.parse(event.data);
+			const message: WsSyncMessage = JSON.parse(event.data);
 			// Broadcast the event to all registered listeners
 			if (message.cmd === "sync") {
 				const groupedMessages = Object.groupBy(
@@ -102,7 +100,7 @@ export class WebSocketClient {
 					const listeners = this.messageListeners.get(modelName);
 					if (!listeners) continue;
 					for (const listener of listeners) {
-						listener({ ...message, sync });
+						listener({ ...message, sync: sync! });
 					}
 				}
 			}
