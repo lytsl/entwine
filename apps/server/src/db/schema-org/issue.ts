@@ -27,6 +27,8 @@ export const issue = sqliteTable("issue", {
 	// dueDate: integer("deleted_at", { mode: "timestamp_ms" }),
 });
 
+export default { issue };
+
 export const issueSchema = {
 	create: type({ data: createInsertSchema(issue) })
 		.array()

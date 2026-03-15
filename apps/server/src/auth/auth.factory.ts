@@ -1,7 +1,58 @@
+import { arktypeValidator } from "@hono/arktype-validator";
+import { type } from "arktype";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { createMiddleware } from "hono/factory";
+import { dbManager } from "@/db/db-manager";
+import mainSchema from "@/db/schema-main";
 import type { THonoPrivateEnv } from "@/routes/types";
-import { authGuard } from "./auth.guard";
+
+export const authGuard = createMiddleware(async (c, next) => {
+	const user = c.get("user");
+	if (!user) {
+		return c.body(null, 401);
+	}
+	// c.req.valid("header");
+	await next();
+});
+
+const orgHeaderSchema = type({
+	"x-organization-slug": type("string").default("linear"),
+});
 
 export function createPrivateApp() {
-	return new Hono<THonoPrivateEnv>().use("*", authGuard);
+	return new Hono<THonoPrivateEnv>()
+		.use("*", arktypeValidator("header", orgHeaderSchema))
+		.use("*", async (c, next) => {
+			const user = c.get("user");
+			if (!user) {
+				return c.body(null, 401);
+			}
+
+			const headers = c.req.valid("header") as typeof orgHeaderSchema.infer;
+			const db = dbManager.db;
+
+			const [dbResult] = await db
+				.select()
+				.from(mainSchema.organization)
+				.innerJoin(
+					mainSchema.member,
+					eq(mainSchema.member.organizationId, mainSchema.organization.id),
+				)
+				.where(
+					and(
+						eq(mainSchema.organization.slug, headers["x-organization-slug"]),
+						eq(mainSchema.member.userId, user.id),
+					),
+				)
+				.limit(1);
+
+			if (!dbResult) {
+				return c.body(null, 401);
+			}
+
+			c.set("organization", dbResult.organization);
+
+			await next();
+		});
 }

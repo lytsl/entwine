@@ -6,10 +6,10 @@ import { logger } from "hono/logger";
 import { auth } from "@/auth/better-auth";
 import origanizationRouter from "@/routes/auth/organization";
 import issueSyncRouter from "@/routes/sync/issue";
-import todoRouter from "@/routes/todo";
 import wsRouter from "@/routes/ws";
 import { env } from "../env";
 import type { THonoBaseEnv } from "./routes/types";
+import path from "node:path";
 
 const app = new Hono<THonoBaseEnv>()
 	.use(logger())
@@ -40,9 +40,7 @@ const app = new Hono<THonoBaseEnv>()
 	.route("/ws", wsRouter)
 	.route("/sync/issue", issueSyncRouter)
 	.route("/auth/organization", origanizationRouter)
-	.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))
-	// .use("*", authGuard)
-	.route("/todo", todoRouter);
+	.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 // export const apiHandler = new OpenAPIHandler(appRouter, {
 // 	plugins: [
