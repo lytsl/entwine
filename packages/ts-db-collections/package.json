@@ -1,0 +1,29 @@
+{
+	"name": "@entwine/ts-db-collections",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./src/index.ts"
+		}
+	},
+	"dependencies": {
+		"@tanstack/db": "^0.5.33",
+		"@tanstack/react-db": "^0.1.75",
+		"@tanstack/store": "^0.9.2",
+		"idb": "^8.0.3"
+	},
+	"devDependencies": {
+		"@entwine/config": "workspace:*",
+		"@types/bun": "catalog:",
+		"@vitest/coverage-v8": "4.1.0",
+		"typescript": "catalog:",
+		"vitest": "catalog:"
+	},
+	"scripts": {
+		"test": "vitest",
+		"test:run": "vitest run",
+		"test:coverage": "vitest run --coverage"
+	}
+}

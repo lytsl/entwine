@@ -18,6 +18,8 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
 		"strictNullChecks": true,
-		"types": ["bun"]
+		"types": ["bun"],
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true
 	}
 }
