@@ -17,19 +17,19 @@ const app = createPrivateApp()
 				.insert(orgSchema.issue)
 				.values(payload)
 				.returning();
-			const syncData = await tx
-				.insert(orgSchema.sync)
-				.values(
-					insertData.map((data) => ({
-						modelName: "issue",
-						modelId: data.id,
-						action: "insert" as const,
-						data: data,
-					})),
-				)
+			// const syncData = await tx
+			// 	.insert(orgSchema.sync)
+			// 	.values(
+			// 		insertData.map((data) => ({
+			// 			modelName: "issue",
+			// 			modelId: data.id,
+			// 			action: "insert" as const,
+			// 			data: data,
+			// 		})),
+			// 	)
+			// 	.returning();
 
-				.returning();
-			return syncData;
+			return [];
 		});
 
 		const lastSyncId = syncData.reduce((mx, item) => Math.max(mx, item.id), 0);
@@ -73,21 +73,22 @@ const app = createPrivateApp()
 			// 		),
 			// 	);
 
-			const syncData = await tx
-				.insert(orgSchema.sync)
-				.values(
-					updateData.map((updateItem) => ({
-						modelName: "issue",
-						modelId: updateItem.id,
-						action: "update" as const,
-					})),
-				)
-				.onConflictDoUpdate({
-					target: [orgSchema.sync.modelName, orgSchema.sync.modelId],
-					set: { action: "update" as const },
-				})
-				.returning();
-			return syncData.map((syncItem) => ({
+			// const syncData = await tx
+			// 	.insert(orgSchema.sync)
+			// 	.values(
+			// 		updateData.map((updateItem) => ({
+			// 			modelName: "issue",
+			// 			modelId: updateItem.id,
+			// 			action: "update" as const,
+			// 		})),
+			// 	)
+			// 	.onConflictDoUpdate({
+			// 		target: [orgSchema.sync.modelName, orgSchema.sync.modelId],
+			// 		set: { action: "update" as const },
+			// 	})
+			// 	.returning();
+
+			return [].map((syncItem) => ({
 				...syncItem,
 				data: updateData.find(
 					(updateItem) => updateItem.id === syncItem.modelId,
