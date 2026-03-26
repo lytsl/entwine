@@ -11,6 +11,6 @@ export default defineConfig({
 	out: "./src/db/migrations-org",
 	dialect: "sqlite",
 	dbCredentials: {
-		url: `file:${env.ORG_DATABASE_PATH}`,
+		url: env.ORG_DATABASE_PATH,
 	},
 });

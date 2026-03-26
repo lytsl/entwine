@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "b5ae21f5-4581-44b9-9444-537f6935ec37",
+  "id": "792da101-a319-4bfc-8d46-4af288349e2c",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -111,16 +111,6 @@
       "name": "sync_pk",
       "table": "sync",
       "entityType": "pks"
-    },
-    {
-      "columns": [
-        "model_name",
-        "model_id"
-      ],
-      "nameExplicit": false,
-      "name": "sync_model_name_model_id_unique",
-      "entityType": "uniques",
-      "table": "sync"
     }
   ],
   "renames": []
