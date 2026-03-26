@@ -11,9 +11,10 @@ import {
 	type UtilsRecord,
 } from "@tanstack/db";
 import { Store } from "@tanstack/react-store";
+import type { DBSchema, IDBPDatabase } from "idb";
 import type { z } from "zod";
-import type { MessageListener, WebSocketClient } from "./ws-client";
 import { api } from "@/utils/api";
+import type { MessageListener, WebSocketClient } from "./ws-client";
 
 interface WebSocketCollectionConfig<T extends object = Record<string, unknown>>
 	extends Omit<
@@ -23,6 +24,12 @@ interface WebSocketCollectionConfig<T extends object = Record<string, unknown>>
 	wsClient: WebSocketClient;
 	modelName: string;
 	apiPath: string;
+
+	// db: IDBPDatabase<
+	// 	DBSchema & { [modelName: string]: { key: string; value: T } } & {
+	// 		_model_sync_data: { key: string; value: number };
+	// 	}
+	// >;
 
 	// Note: onInsert/onUpdate/onDelete are handled by the WebSocket connection
 	// Users don't provide these handlers
@@ -212,6 +219,7 @@ export function webSocketCollectionOptions<
 		onUpdate,
 		onDelete,
 		utils: {},
-		syncMode: "on-demand",
+		syncMode: config.syncMode,
+		// syncMode: "on-demand",
 	};
 }

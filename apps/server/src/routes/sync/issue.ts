@@ -1,5 +1,5 @@
 import { arktypeValidator } from "@hono/arktype-validator";
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { createPrivateApp } from "@/auth/auth.factory";
 import { dbManager } from "@/db/db-manager";
 import orgSchema from "@/db/schema-org";
@@ -27,6 +27,7 @@ const app = createPrivateApp()
 						data: data,
 					})),
 				)
+
 				.returning();
 			return syncData;
 		});
@@ -59,18 +60,18 @@ const app = createPrivateApp()
 				)
 			).flat();
 
-			await tx
-				.delete(orgSchema.sync)
-				.where(
-					or(
-						...updateData.map((updateItem) =>
-							and(
-								eq(orgSchema.sync.modelId, updateItem.id),
-								eq(orgSchema.sync.modelName, "issue"),
-							),
-						),
-					),
-				);
+			// await tx
+			// 	.delete(orgSchema.sync)
+			// 	.where(
+			// 		or(
+			// 			...updateData.map((updateItem) =>
+			// 				and(
+			// 					eq(orgSchema.sync.modelId, updateItem.id),
+			// 					eq(orgSchema.sync.modelName, "issue"),
+			// 				),
+			// 			),
+			// 		),
+			// 	);
 
 			const syncData = await tx
 				.insert(orgSchema.sync)
@@ -81,6 +82,10 @@ const app = createPrivateApp()
 						action: "update" as const,
 					})),
 				)
+				.onConflictDoUpdate({
+					target: [orgSchema.sync.modelName, orgSchema.sync.modelId],
+					set: { action: "update" as const },
+				})
 				.returning();
 			return syncData.map((syncItem) => ({
 				...syncItem,

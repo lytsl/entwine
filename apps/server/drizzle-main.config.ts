@@ -9,8 +9,8 @@ dotenv.config({
 export default defineConfig({
 	schema: "./src/db/schema-main",
 	out: "./src/db/migrations-main",
-	dialect: "turso",
+	dialect: "sqlite",
 	dbCredentials: {
-		url: env.MAIN_DATABASE_URL,
+		url: env.MAIN_DATABASE_PATH,
 	},
 });

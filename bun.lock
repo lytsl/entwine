@@ -117,6 +117,15 @@
         "hono": "catalog:",
       },
     },
+    "packages/sync": {
+      "name": "@entwine/sync",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@entwine/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
     "packages/ts-db-collections": {
       "name": "@entwine/ts-db-collections",
       "version": "0.0.0",
@@ -337,6 +346,8 @@
     "@entwine/hono-react-query": ["@entwine/hono-react-query@workspace:packages/hono-react-query"],
 
     "@entwine/server": ["@entwine/server@workspace:apps/server"],
+
+    "@entwine/sync": ["@entwine/sync@workspace:packages/sync"],
 
     "@entwine/ts-db-collections": ["@entwine/ts-db-collections@workspace:packages/ts-db-collections"],
 

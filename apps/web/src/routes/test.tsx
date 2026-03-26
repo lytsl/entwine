@@ -14,6 +14,7 @@ import {
 import { LexoRank } from "lexorank";
 import { GripVertical, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { issueCollection } from "@/collections/issue";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -33,7 +34,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { issueCollection } from "@/collections/issue";
+
 // import { issueCollection } from "@/collections/issue";
 
 // --- Types ---

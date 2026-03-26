@@ -9,7 +9,7 @@ dotenv.config({
 export default defineConfig({
 	schema: "./src/db/schema-org",
 	out: "./src/db/migrations-org",
-	dialect: "turso",
+	dialect: "sqlite",
 	dbCredentials: {
 		url: `file:${env.ORG_DATABASE_PATH}`,
 	},

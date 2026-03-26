@@ -5,7 +5,7 @@ import "dotenv/config";
 const envSchema = type({
 	NODE_ENV: "'development' | 'production' | 'test' = 'development'",
 	PORT: "string.numeric.parse",
-	MAIN_DATABASE_URL: "string > 1",
+	MAIN_DATABASE_PATH: "string > 1",
 	ORG_DATABASE_PATH: "string > 1",
 	ORG_FOLDER_PATH: "string > 1",
 	BETTER_AUTH_SECRET: "string >= 32",

@@ -26,6 +26,7 @@ export function createPrivateApp() {
 		.use("*", async (c, next) => {
 			const user = c.get("user");
 			if (!user) {
+				console.log("session", c.get("session"));
 				return c.body(null, 401);
 			}
 
@@ -48,6 +49,7 @@ export function createPrivateApp() {
 				.limit(1);
 
 			if (!dbResult) {
+				console.log("slug", headers["x-organization-slug"]);
 				return c.body(null, 401);
 			}
 

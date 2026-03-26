@@ -2,18 +2,19 @@ import { exec } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { Database } from "bun:sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
 import { appRoot } from "@/utils/app-root";
 import { env } from "../../env";
 import mainSchema from "./schema-main";
 import mainRelations from "./schema-main/relations";
 import orgSchema from "./schema-org";
+import { createDrizzleExtension } from "./utils/sync-extension";
 
 const execAsync = promisify(exec);
 
 class DatabaseManager {
-	private client = createClient({ url: env.MAIN_DATABASE_URL });
+	private client = new Database(env.MAIN_DATABASE_PATH);
 	db = drizzle({
 		client: this.client,
 		schema: mainSchema,
@@ -78,8 +79,10 @@ class DatabaseManager {
 			fs.unlinkSync(configPath);
 		}
 
-		const client = createClient({ url: `file:${dbPath}` });
-		const orgDb = drizzle({ client, schema: orgSchema });
+		const client = new Database(dbPath);
+		const orgDb = createDrizzleExtension(
+			drizzle({ client, schema: orgSchema }),
+		);
 		this.orgConnections.set(organizationId, orgDb);
 
 		return orgDb;
