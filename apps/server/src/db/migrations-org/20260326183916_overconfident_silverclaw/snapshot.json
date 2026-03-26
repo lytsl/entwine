@@ -1,10 +1,10 @@
 {
+  "id": "ae3bb015-3982-4064-b32d-bedd5b21f88f",
+  "prevIds": [
+    "f7d6971f-2687-4e75-bb36-8c726b78e79f"
+  ],
   "version": "7",
   "dialect": "sqlite",
-  "id": "792da101-a319-4bfc-8d46-4af288349e2c",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
   "ddl": [
     {
       "name": "issue",
