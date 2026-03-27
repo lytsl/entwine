@@ -38,4 +38,5 @@ export const issueSchema = {
 		.array()
 		.atLeastLength(1),
 	select: createSelectSchema(issue),
+	delete: type({ id: "string" }).array().atLeastLength(1),
 };

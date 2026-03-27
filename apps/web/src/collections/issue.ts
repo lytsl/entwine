@@ -2,7 +2,7 @@ import { createCollection } from "@tanstack/db";
 import { useLiveQuery } from "@tanstack/react-db";
 import z from "zod";
 import { db } from "@/db";
-import { webSocketCollectionOptions } from "@/lib/sync";
+import { webSocketCollectionOptions } from "@/lib/sync/tdb-collection";
 import { wsSyncClient } from "@/utils/api";
 
 export const issueCollection = createCollection(

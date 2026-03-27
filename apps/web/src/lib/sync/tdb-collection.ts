@@ -28,9 +28,6 @@ interface WebSocketCollectionConfig<
 	apiPath: string;
 
 	db: IDBPDatabase;
-
-	// Note: onInsert/onUpdate/onDelete are handled by the WebSocket connection
-	// Users don't provide these handlers
 }
 
 interface WebSocketUtils extends UtilsRecord {}
@@ -62,16 +59,16 @@ export function webSocketCollectionOptions<
 } {
 	const lastSyncId = new Store(0);
 	const db = config.db;
-	const metadataDbName: `_${string}_metadata` =
-		`_${config.modelName}_metadata` as const;
 
 	type TMetadataDb = IDBPDatabase<
-		DBSchema & {
-			[K in typeof metadataDbName]: {
-				key: string;
-				value: { lastSyncId: number };
-			};
-		}
+		DBSchema &
+			Record<
+				"metadata",
+				{
+					key: string;
+					value: { lastSyncId: number };
+				}
+			>
 	>;
 	type TModelDb = IDBPDatabase<
 		DBSchema & Record<TModelName, { key: string; value: TModel }>
@@ -119,12 +116,9 @@ export function webSocketCollectionOptions<
 
 		const onMessage: MessageListener<TModel> = async (data) => {
 			begin();
-			const tx = db.transaction(
-				[config.modelName, metadataDbName],
-				"readwrite",
-			);
+			const tx = db.transaction([config.modelName, "metadata"], "readwrite");
 			const modelStore = tx.objectStore(config.modelName);
-			const metadataStore = tx.objectStore(metadataDbName);
+			const metadataStore = tx.objectStore("metadata");
 
 			await Promise.all(
 				[
@@ -157,7 +151,7 @@ export function webSocketCollectionOptions<
 			onMessage,
 		);
 
-		(db as TMetadataDb).get(metadataDbName, "metadata").then((metadata) => {
+		(db as TMetadataDb).get("metadata", "metadata").then((metadata) => {
 			const lastSyncIdFromDb = metadata?.lastSyncId ?? 0;
 			if (typeof lastSyncIdFromDb === "number") {
 				lastSyncId.setState(() => lastSyncIdFromDb);
@@ -227,8 +221,15 @@ export function webSocketCollectionOptions<
 		awaitLastSyncId(data?.lastSyncId);
 	};
 
-	const onDelete = async (_params: DeleteMutationFnParams<TModel, string>) => {
-		throw new Error("Not implemented");
+	const onDelete = async (params: DeleteMutationFnParams<TModel, string>) => {
+		const data = await api
+			.patch(config.apiPath, {
+				json: params.transaction.mutations.map((mutation) => ({
+					id: mutation.key,
+				})),
+			})
+			.json<{ lastSyncId: number }>();
+		awaitLastSyncId(data?.lastSyncId);
 	};
 
 	return {

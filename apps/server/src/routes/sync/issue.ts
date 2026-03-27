@@ -108,28 +108,49 @@ const app = createPrivateApp()
 		);
 		return c.json({ lastSyncId }, 201);
 	})
-	.get("/", arktypeValidator("query", ParsedLoadSubsetOptions), async (c) => {
+	.delete("/", arktypeValidator("json", issueSchema.delete), async (c) => {
 		const db = await dbManager.getOrgDb(c.get("organization").id);
-		const query = c.req.valid("query");
-		const parsedFilters = parseTanstackOptions(orgSchema.issue, query);
+		const payload = c.req.valid("json");
 
-		let dbQuery = db.select().from(orgSchema.issue).$dynamic();
-		if (parsedFilters.where.length) {
-			dbQuery = dbQuery.where(and(...parsedFilters.where));
-		}
-		if (parsedFilters.orderBy.length) {
-			dbQuery = dbQuery.orderBy(...parsedFilters.orderBy);
-		}
-		if (typeof parsedFilters.offset === "number") {
-			dbQuery = dbQuery.offset(parsedFilters.offset);
-		}
-		if (typeof parsedFilters.limit === "number") {
-			dbQuery = dbQuery.limit(parsedFilters.limit);
-		}
+		const syncData = await db.transaction(async (tx) => {
+			await tx
+				.delete(orgSchema.issue)
+				.where(inArray(orgSchema.issue.id, payload.ids));
 
-		const data = await dbQuery;
-		return c.json(data, 200);
+			const syncData = await tx
+				.select({
+					modelName: orgSchema.sync.modelName,
+					modelId: orgSchema.sync.modelId,
+					id: max(orgSchema.sync.id),
+					action: orgSchema.sync.action,
+				})
+				.from(orgSchema.sync)
+				.where(
+					and(
+						eq(orgSchema.sync.modelName, "issue"),
+						inArray(orgSchema.sync.modelId, payload.ids),
+					),
+				)
+				.groupBy(orgSchema.sync.modelName, orgSchema.sync.modelId);
+
+			return syncData.map((syncItem) => ({
+				...syncItem,
+				data: null,
+			}));
+		});
+
+		const lastSyncId = syncData.reduce((mx, item) => Math.max(mx, item.id), 0);
+		c.env.server.publish(
+			"org",
+			JSON.stringify({
+				cmd: "sync",
+				sync: syncData,
+				lastSyncId,
+			}),
+		);
+		return c.json({ lastSyncId }, 201);
 	})
+
 	.get(
 		"/delta",
 		arktypeValidator("query", type({ lastSyncId: "string.integer.parse" })),
@@ -187,6 +208,28 @@ const app = createPrivateApp()
 
 			return c.json(data, 200);
 		},
-	);
+	)
+	.get("/", arktypeValidator("query", ParsedLoadSubsetOptions), async (c) => {
+		const db = await dbManager.getOrgDb(c.get("organization").id);
+		const query = c.req.valid("query");
+		const parsedFilters = parseTanstackOptions(orgSchema.issue, query);
+
+		let dbQuery = db.select().from(orgSchema.issue).$dynamic();
+		if (parsedFilters.where.length) {
+			dbQuery = dbQuery.where(and(...parsedFilters.where));
+		}
+		if (parsedFilters.orderBy.length) {
+			dbQuery = dbQuery.orderBy(...parsedFilters.orderBy);
+		}
+		if (typeof parsedFilters.offset === "number") {
+			dbQuery = dbQuery.offset(parsedFilters.offset);
+		}
+		if (typeof parsedFilters.limit === "number") {
+			dbQuery = dbQuery.limit(parsedFilters.limit);
+		}
+
+		const data = await dbQuery;
+		return c.json(data, 200);
+	});
 
 export default app;
