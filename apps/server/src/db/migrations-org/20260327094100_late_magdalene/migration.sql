@@ -1,0 +1,1 @@
+CREATE INDEX `sync_model_idx` ON `sync` (`model_name`,`model_id`);

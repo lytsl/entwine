@@ -6,34 +6,47 @@ import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 
-const { values, positionals } = parseArgs({
-	args: process.argv.slice(2),
-	options: {
-		config: {
-			type: "string",
-		},
-	},
+const { values } = parseArgs({
+  args: process.argv.slice(2),
+  options: {
+    config: {
+      type: "string",
+    },
+  },
 });
 const configFilePaths = values.config?.split(",");
+
 if (!configFilePaths || configFilePaths.length === 0)
-	throw new Error("config is required");
+  throw new Error("config is required");
 
 async function loadModule(filePath: string) {
-	const resolvedPath = path.resolve(filePath);
-	const fileUrl = pathToFileURL(resolvedPath).href;
-	const module = await import(fileUrl);
-	return module.default as Config;
+  const resolvedPath = path.resolve(filePath);
+  const fileUrl = pathToFileURL(resolvedPath).href;
+  const module = await import(fileUrl);
+  const moduleDefault = module.default;
+  return moduleDefault;
 }
 
 for (const configFilePath of configFilePaths) {
-	const config = await loadModule(configFilePath);
-	if (config.dialect === "sqlite") {
-		throw new Error("dialect must be sqlite");
-	}
+  const config = await loadModule(configFilePath);
+  if (config.dialect !== "sqlite") {
+    throw new Error("dialect must be sqlite");
+  }
 
-	const dbConfigPath = (config as any).dbCredentials.url;
-	const dbPath = path.join(__dirname, dbConfigPath);
+  const dbPath = path.join(__dirname, (config as any).dbCredentials.url);
+  const client = new Database(dbPath);
 
-	const client = new Database(dbPath);
-	const orgDb = drizzle({ client, schema: orgSchema });
+  const schema = await loadModule((config as any).schema);
+
+  const db = drizzle({ client, schema });
+
+  const errorResponse = migrate(db, {
+    migrationsFolder: path.join(__dirname, (config as any).out),
+  });
+  if (errorResponse) {
+    console.error(errorResponse);
+    throw new Error(`Error applying migration for ${configFilePath}`, {
+      cause: errorResponse,
+    });
+  }
 }

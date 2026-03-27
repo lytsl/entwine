@@ -18,25 +18,3 @@ CREATE TRIGGER IF NOT EXISTS issue_sync_delete
         INSERT INTO sync (model_name, model_id, action)
         VALUES ('issue',NEW.id,'delete');
     END;
---> statement-breakpoint
-
--- CREATE TRIGGER IF NOT EXISTS issue_sync_update
---       AFTER UPDATE ON issue
---       BEGIN
---         INSERT INTO sync ( model_name, model_id, action)
---         VALUES ('issue',NEW.id,'update')
--- 		on conflict (sync.model_name, sync.model_id)
--- 		do update
--- 		set id = (SELECT seq + 1 FROM sqlite_sequence WHERE name = 'sync'), action = 'update';
---       END;
-
-
--- CREATE TRIGGER IF NOT EXISTS issue_sync_update
---       AFTER UPDATE ON issue
---       BEGIN
---         UPDATE sync
--- 		SET
--- 		    id = (SELECT IFNULL(MAX(id), 0) + 1 FROM sync),
--- 		    action = 'update'
--- 		WHERE model_name = 'issue' AND model_id = NEW.id;
---       END;

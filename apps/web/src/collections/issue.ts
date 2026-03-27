@@ -3,27 +3,29 @@ import { useLiveQuery } from "@tanstack/react-db";
 import z from "zod";
 import { webSocketCollectionOptions } from "@/lib/sync";
 import { wsSyncClient } from "@/utils/api";
+import { db } from "@/db";
 
 export const issueCollection = createCollection(
-	webSocketCollectionOptions({
-		wsClient: wsSyncClient,
-		getKey: (todo) => todo.id,
-		schema: z.object({
-			id: z.string(),
-			title: z.string(),
-			description: z.string(),
-			rank: z.string(),
-		}),
-		modelName: "issue",
-		syncMode: "on-demand",
-		apiPath: "sync/issue",
-	}),
+  webSocketCollectionOptions({
+    wsClient: wsSyncClient,
+    getKey: (todo) => todo.id,
+    schema: z.object({
+      id: z.string().default(() => crypto.randomUUID()),
+      title: z.string(),
+      description: z.string(),
+      rank: z.string(),
+    }),
+    modelName: "issue",
+    syncMode: "on-demand",
+    apiPath: "sync/issue",
+    db,
+  }),
 );
 
 export const useCollectionData = () =>
-	useLiveQuery((q) =>
-		q
-			.from({ issue: issueCollection })
-			.orderBy(({ issue }) => issue.rank, "asc")
-			.limit(10),
-	);
+  useLiveQuery((q) =>
+    q
+      .from({ issue: issueCollection })
+      .orderBy(({ issue }) => issue.rank, "asc")
+      .limit(10),
+  );

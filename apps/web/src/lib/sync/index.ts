@@ -1,14 +1,14 @@
 import type { WithRequired } from "@entwine/utility/types";
 import {
-	type CollectionConfig,
-	type DeleteMutationFnParams,
-	type InsertMutationFnParams,
-	type LoadSubsetOptions,
-	parseLoadSubsetOptions,
-	type SyncConfig,
-	TanStackDBError,
-	type UpdateMutationFnParams,
-	type UtilsRecord,
+  type CollectionConfig,
+  type DeleteMutationFnParams,
+  type InsertMutationFnParams,
+  type LoadSubsetOptions,
+  parseLoadSubsetOptions,
+  type SyncConfig,
+  TanStackDBError,
+  type UpdateMutationFnParams,
+  type UtilsRecord,
 } from "@tanstack/db";
 import { Store } from "@tanstack/react-store";
 import type { DBSchema, IDBPDatabase } from "idb";
@@ -16,210 +16,231 @@ import type { z } from "zod";
 import { api } from "@/utils/api";
 import type { MessageListener, WebSocketClient } from "./ws-client";
 
-interface WebSocketCollectionConfig<T extends object = Record<string, unknown>>
-	extends Omit<
-		WithRequired<CollectionConfig<T, string, z.ZodType<T>>, "schema">,
-		"onInsert" | "onUpdate" | "onDelete" | "sync" | "id"
-	> {
-	wsClient: WebSocketClient;
-	modelName: string;
-	apiPath: string;
+interface WebSocketCollectionConfig<
+  TModelName extends string,
+  TModel extends object = Record<string, unknown>,
+> extends Omit<
+  WithRequired<CollectionConfig<TModel, string, z.ZodType<TModel>>, "schema">,
+  "onInsert" | "onUpdate" | "onDelete" | "sync" | "id"
+> {
+  wsClient: WebSocketClient;
+  modelName: TModelName;
+  apiPath: string;
 
-	// db: IDBPDatabase<
-	// 	DBSchema & { [modelName: string]: { key: string; value: T } } & {
-	// 		_model_sync_data: { key: string; value: number };
-	// 	}
-	// >;
+  db: IDBPDatabase;
 
-	// Note: onInsert/onUpdate/onDelete are handled by the WebSocket connection
-	// Users don't provide these handlers
+  // Note: onInsert/onUpdate/onDelete are handled by the WebSocket connection
+  // Users don't provide these handlers
 }
 
 interface WebSocketUtils extends UtilsRecord {}
 
 export class TrailBaseDBCollectionError extends TanStackDBError {
-	constructor(message: string) {
-		super(message);
-		this.name = "TrailBaseDBCollectionError";
-	}
+  constructor(message: string) {
+    super(message);
+    this.name = "TrailBaseDBCollectionError";
+  }
 }
 
 export class TimeoutWaitingForIdsError extends TrailBaseDBCollectionError {
-	constructor(ids: string | number) {
-		super(`Timeout waiting for ids: ${ids}`);
-		this.name = "TimeoutWaitingForIdsError";
-	}
+  constructor(ids: string | number) {
+    super(`Timeout waiting for ids: ${ids}`);
+    this.name = "TimeoutWaitingForIdsError";
+  }
 }
 
 export function webSocketCollectionOptions<
-	T extends object = Record<string, unknown>,
+  TModelName extends string,
+  TModel extends object = Record<string, unknown>,
 >(
-	config: WebSocketCollectionConfig<T>,
-): WithRequired<CollectionConfig<T, string, z.ZodType<T>>, "schema"> & {
-	utils: WebSocketUtils;
+  config: WebSocketCollectionConfig<TModelName, TModel>,
+): WithRequired<
+  CollectionConfig<TModel, string, z.ZodType<TModel>>,
+  "schema"
+> & {
+  utils: WebSocketUtils;
 } {
-	const lastSyncId = new Store(0);
+  const lastSyncId = new Store(0);
+  const db = config.db;
+  const metadataDbName: `_${string}_metadata` =
+    `_${config.modelName}_metadata` as const;
 
-	const awaitLastSyncId = (
-		syncId: number,
-		timeout: number = 120 * 1000,
-	): Promise<void> => {
-		if (typeof syncId !== "number") {
-			console.error("Invalid last sync id", syncId);
-			return Promise.resolve();
-		}
-		const completed = (lastSyncId: number) => lastSyncId >= syncId;
-		if (completed(lastSyncId.state)) {
-			return Promise.resolve();
-		}
+  type TMetadataDb = IDBPDatabase<
+    DBSchema & {
+      [K in typeof metadataDbName]: {
+        key: string;
+        value: { lastSyncId: number };
+      };
+    }
+  >;
+  type TModelDb = IDBPDatabase<
+    DBSchema & Record<TModelName, { key: string; value: TModel }>
+  >;
 
-		return new Promise<void>((resolve, reject) => {
-			const timeoutId = setTimeout(() => {
-				unsubscribe();
-				reject(new TimeoutWaitingForIdsError(syncId));
-			}, timeout);
+  // const lastSyncIdSubscription = lastSyncId.subscribe(async (value) => {
+  //   await (db as TMetadataDb).put(
+  //     metadataName,
+  //     { lastSyncId: value },
+  //     config.modelName,
+  //   );
+  // });
 
-			const { unsubscribe } = lastSyncId.subscribe((value) => {
-				if (completed(value)) {
-					clearTimeout(timeoutId);
-					unsubscribe();
-					resolve();
-				}
-			});
-		});
-	};
+  const awaitLastSyncId = (
+    syncId: number,
+    timeout: number = 120 * 1000,
+  ): Promise<void> => {
+    if (typeof syncId !== "number") {
+      console.error("Invalid last sync id", syncId);
+      return Promise.resolve();
+    }
+    const completed = (lastSyncId: number) => lastSyncId >= syncId;
+    if (completed(lastSyncId.state)) {
+      return Promise.resolve();
+    }
 
-	const sync: SyncConfig<T, string>["sync"] = (params) => {
-		const { begin, write, commit, markReady } = params;
+    return new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        unsubscribe();
+        reject(new TimeoutWaitingForIdsError(syncId));
+      }, timeout);
 
-		const onMessage: MessageListener<T> = (data) => {
-			begin();
-			for (const item of data.sync) {
-				switch (item.action) {
-					// case "sync":
-					//   // Initial sync with array of items
-					//   begin();
-					//   if (Array.isArray(message.data)) {
-					//     for (const item of message.data) {
-					//       write({ type: "insert", value: item });
-					//     }
-					//   }
-					//   commit();
-					//   markReady();
-					//   break;
+      const { unsubscribe } = lastSyncId.subscribe((value) => {
+        if (completed(value)) {
+          clearTimeout(timeoutId);
+          unsubscribe();
+          resolve();
+        }
+      });
+    });
+  };
 
-					case "insert":
-					case "update":
-					case "delete":
-						// Real-time updates from other clients
-						write({
-							type: item.action,
-							value: item.data,
-						});
-						break;
+  const sync: SyncConfig<TModel, string>["sync"] = (params) => {
+    const { begin, write, commit, markReady } = params;
 
-					// case "ack":
-					//   // Server acknowledged our transaction
-					//   if (message.transactionId) {
-					//     const pending = pendingTransactions.get(message.transactionId);
-					//     if (pending) {
-					//       clearTimeout(pending.timeout);
-					//       pendingTransactions.delete(message.transactionId);
-					//       pending.resolve();
-					//     }
-					//   }
-					//   break;
+    const onMessage: MessageListener<TModel> = async (data) => {
+      begin();
+      const tx = db.transaction(
+        [config.modelName, metadataDbName],
+        "readwrite",
+      );
+      const modelStore = tx.objectStore(config.modelName);
+      const metadataStore = tx.objectStore(metadataDbName);
 
-					// case "transaction":
-					//   // Server sending back the actual data after processing our transaction
-					//   if (message.mutations) {
-					//     begin();
-					//     for (const mutation of message.mutations) {
-					//       write({
-					//         type: mutation.type,
-					//         value: mutation.data,
-					//       });
-					//     }
-					//     commit();
-					//   }
-					//   break;
-				}
-			}
-			commit();
+      await Promise.all(
+        [
+          data.sync.map((item) => {
+            write({
+              type: item.action,
+              value: item.data,
+            });
 
-			if (typeof data.lastSyncId === "number") {
-				lastSyncId.setState(() => data.lastSyncId);
-			}
-		};
+            switch (item.action) {
+              case "insert":
+                return modelStore.add(item.data);
+              case "update":
+                return modelStore.put(item.data);
+              case "delete":
+                return modelStore.delete((item.data as any).id);
+            }
+          }),
+          metadataStore.put({ lastSyncId: data.lastSyncId }, "metadata"),
+          tx.done,
+        ].flat(),
+      );
 
-		config.wsClient.addMessageListener(
-			{ modelName: config.modelName },
-			onMessage,
-		);
+      lastSyncId.setState(() => data.lastSyncId);
+      commit();
+    };
 
-		markReady();
+    config.wsClient.addMessageListener(
+      { modelName: config.modelName },
+      onMessage,
+    );
 
-		return {
-			cleanup: () => {
-				config.wsClient.removeMessageListener(
-					{ modelName: config.modelName },
-					onMessage,
-				);
-			},
-			loadSubset: async (options: LoadSubsetOptions) => {
-				const query: any = parseLoadSubsetOptions(options);
-				const response = await api.get(config.apiPath, {
-					searchParams: { query: JSON.stringify(query) },
-				});
-				const data = await response.json();
-				begin();
-				if (Array.isArray(data)) {
-					for (const item of data) {
-						write({ type: "insert", value: item });
-					}
-				}
-				commit();
-			},
-		};
-	};
+    (db as TMetadataDb).get(metadataDbName, "metadata").then((metadata) => {
+      const lastSyncIdFromDb = metadata?.lastSyncId ?? 0;
+      if (typeof lastSyncIdFromDb === "number") {
+        lastSyncId.setState(() => lastSyncIdFromDb);
+      }
 
-	const onInsert = async (params: InsertMutationFnParams<T, string>) => {
-		const data = await api
-			.post(config.apiPath, {
-				json: params.transaction.mutations.map((mutation) => ({
-					data: mutation.modified,
-				})),
-			})
-			.json<{ lastSyncId: number }>();
-		awaitLastSyncId(data?.lastSyncId);
-	};
+      api
+        .get(`${config.apiPath}/delta`, {
+          searchParams: { lastSyncId: lastSyncIdFromDb },
+        })
+        .then(async (response) => {
+          const sync: any = await response.json();
+          if (Array.isArray(sync) && sync.length > 0) {
+            onMessage({
+              cmd: "sync",
+              sync,
+              lastSyncId: sync.reduce((acc, item) => Math.max(acc, item.id), 0),
+            });
+          }
+          markReady();
+        });
+    });
 
-	const onUpdate = async (params: UpdateMutationFnParams<T, string>) => {
-		const data = await api
-			.patch(config.apiPath, {
-				json: params.transaction.mutations.map((mutation) => ({
-					id: mutation.key,
-					data: mutation.changes,
-				})),
-			})
-			.json<{ lastSyncId: number }>();
-		awaitLastSyncId(data?.lastSyncId);
-	};
+    return {
+      cleanup: () => {
+        config.wsClient.removeMessageListener(
+          { modelName: config.modelName },
+          onMessage,
+        );
+        // lastSyncIdSubscription.unsubscribe();
+      },
+      loadSubset: async (options: LoadSubsetOptions) => {
+        const query = parseLoadSubsetOptions(options);
 
-	const onDelete = async (_params: DeleteMutationFnParams<T, string>) => {
-		throw new Error("Not implemented");
-	};
+        const data = await db.getAll(config.modelName, undefined, query.limit);
 
-	return {
-		id: config.modelName,
-		schema: config.schema,
-		getKey: config.getKey,
-		sync: { sync },
-		onInsert,
-		onUpdate,
-		onDelete,
-		utils: {},
-		syncMode: config.syncMode,
-		// syncMode: "on-demand",
-	};
+        begin();
+        if (Array.isArray(data)) {
+          for (const item of data) {
+            write({ type: "insert", value: item });
+          }
+        }
+        commit();
+      },
+    };
+  };
+
+  const onInsert = async (params: InsertMutationFnParams<TModel, string>) => {
+    const data = await api
+      .post(config.apiPath, {
+        json: params.transaction.mutations.map((mutation) => ({
+          data: mutation.modified,
+        })),
+      })
+      .json<{ lastSyncId: number }>();
+    awaitLastSyncId(data?.lastSyncId);
+  };
+
+  const onUpdate = async (params: UpdateMutationFnParams<TModel, string>) => {
+    const data = await api
+      .patch(config.apiPath, {
+        json: params.transaction.mutations.map((mutation) => ({
+          id: mutation.key,
+          data: mutation.changes,
+        })),
+      })
+      .json<{ lastSyncId: number }>();
+    awaitLastSyncId(data?.lastSyncId);
+  };
+
+  const onDelete = async (_params: DeleteMutationFnParams<TModel, string>) => {
+    throw new Error("Not implemented");
+  };
+
+  return {
+    id: config.modelName,
+    schema: config.schema,
+    getKey: config.getKey,
+    sync: { sync },
+    onInsert,
+    onUpdate,
+    onDelete,
+    utils: {},
+    syncMode: config.syncMode,
+    // syncMode: "on-demand",
+  };
 }
