@@ -7,8 +7,8 @@ dotenv.config({
 });
 
 export default defineConfig({
-	schema: "./src/db/schema-org",
-	out: "./src/db/migrations-org",
+	schema: "src/db/schema-org",
+	out: "src/db/migrations-org",
 	dialect: "sqlite",
 	dbCredentials: {
 		url: env.ORG_DATABASE_PATH,

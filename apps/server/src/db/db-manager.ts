@@ -4,6 +4,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
+import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { appRoot } from "@/utils/app-root";
 import { env } from "../../env";
 import mainSchema from "./schema-main";
@@ -57,32 +58,26 @@ class DatabaseManager {
 
 		if (isNewDatabase) {
 			fs.copyFileSync(path.join(appRoot, env.ORG_DATABASE_PATH), dbPath);
-		} else {
-			const configTemplate = fs.readFileSync(
-				path.join(appRoot, "drizzle-org.template.ts"),
-			);
-			const orgConfig = configTemplate
-				.toString()
-				.replace("$url", `file:${dbPath}`)
-				.replace("$schema", path.join(appRoot, "src/db/schema-org"))
-				.replace("$out", path.join(appRoot, "src/db/migrations-org"));
-			const configPath = path.join(
-				appRoot,
-				env.ORG_FOLDER_PATH,
-				`${organizationId}.config.ts`,
-			);
-
-			fs.writeFileSync(configPath, orgConfig);
-			await execAsync(
-				`bunx drizzle-kit migrate --ignore-conflicts --config=${configPath}`,
-			);
-			fs.unlinkSync(configPath);
 		}
 
 		const client = new Database(dbPath);
 		const orgDb = createDrizzleExtension(
 			drizzle({ client, schema: orgSchema }),
 		);
+
+		if (!isNewDatabase) {
+			const errorResponse = migrate(orgDb, {
+				migrationsFolder: path.join(appRoot, "src/db/migrations-org"),
+			});
+			if (errorResponse) {
+				console.error(errorResponse);
+				throw new Error(
+					`Error applying migration to ${organizationId}.sqlite`,
+					{ cause: errorResponse },
+				);
+			}
+		}
+
 		this.orgConnections.set(organizationId, orgDb);
 
 		return orgDb;

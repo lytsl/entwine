@@ -24,8 +24,8 @@
 		"db:main:generate": "drizzle-kit generate --config=drizzle-main.config.ts",
 		"db:org:generate": "drizzle-kit generate --config=drizzle-org.config.ts",
 		"db:generate": "bun run --parallel db:main:generate db:org:generate",
-		"db:main:migrate": "drizzle-kit migrate --config=drizzle-main.config.ts",
-		"db:org:migrate": "drizzle-kit migrate --config=drizzle-org.config.ts",
+		"db:main:migrate": "bun drizzle-migrate.ts --config=drizzle-main.config.ts",
+		"db:org:migrate": "bun drizzle-migrate.ts --config=drizzle-org.config.ts",
 		"db:migrate": "bun run --parallel db:main:migrate db:org:migrate"
 	},
 	"dependencies": {
@@ -36,9 +36,7 @@
 		"dotenv": "catalog:",
 		"drizzle-orm": "catalog:",
 		"hono": "catalog:",
-		"hono-openapi": "^1.2.0",
-		"@libsql/client": "0.15.15",
-		"libsql": "0.5.22"
+		"hono-openapi": "^1.2.0"
 	},
 	"devDependencies": {
 		"@better-auth/cli": "^1.4.18",
