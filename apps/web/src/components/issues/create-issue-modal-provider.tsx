@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateNewIssue } from "@/routes/$orgId/-components/create-new-issue";
+import { CreateNewIssue } from "@/routes/$orgSlug/-components/create-new-issue";
 
 export function CreateIssueModalProvider() {
 	return (

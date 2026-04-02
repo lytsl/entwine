@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/$orgId/")({
+export const Route = createFileRoute("/$orgSlug/")({
 	component: RouteComponent,
 	staticData: {
 		breadcrumbTitle: "Org Index",

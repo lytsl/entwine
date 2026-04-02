@@ -3,7 +3,7 @@ import AllIssues from "@/components/issues/all-issues";
 import MainLayout from "@/components/layout/main-layout";
 import Header from "./-components/issues/header";
 
-export const Route = createFileRoute("/$orgId/issues")({
+export const Route = createFileRoute("/$orgSlug/issues")({
 	component: RouteComponent,
 });
 
@@ -12,5 +12,5 @@ function RouteComponent() {
 		<MainLayout header={<Header />}>
 			<AllIssues />
 		</MainLayout>
-	);
+	)
 }

@@ -10,13 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
-import { Route as OrgIdLayoutRouteImport } from './routes/$orgId/layout'
+import { Route as OrgSlugLayoutRouteImport } from './routes/$orgSlug/layout'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OrgIdIndexRouteImport } from './routes/$orgId/index'
+import { Route as OrgSlugIndexRouteImport } from './routes/$orgSlug/index'
 import { Route as authSignupRouteImport } from './routes/(auth)/signup'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as authAuthRouteImport } from './routes/(auth)/_auth'
-import { Route as OrgIdIssuesRouteImport } from './routes/$orgId/issues'
+import { Route as OrgSlugIssuesRouteImport } from './routes/$orgSlug/issues'
 import { Route as authAuthJoinRouteImport } from './routes/(auth)/_auth.join'
 import { Route as authAuthAddAccountRouteImport } from './routes/(auth)/_auth.add-account'
 
@@ -25,9 +25,9 @@ const TestRoute = TestRouteImport.update({
   path: '/test',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrgIdLayoutRoute = OrgIdLayoutRouteImport.update({
-  id: '/$orgId',
-  path: '/$orgId',
+const OrgSlugLayoutRoute = OrgSlugLayoutRouteImport.update({
+  id: '/$orgSlug',
+  path: '/$orgSlug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -35,10 +35,10 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrgIdIndexRoute = OrgIdIndexRouteImport.update({
+const OrgSlugIndexRoute = OrgSlugIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => OrgIdLayoutRoute,
+  getParentRoute: () => OrgSlugLayoutRoute,
 } as any)
 const authSignupRoute = authSignupRouteImport.update({
   id: '/(auth)/signup',
@@ -54,10 +54,10 @@ const authAuthRoute = authAuthRouteImport.update({
   id: '/(auth)/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrgIdIssuesRoute = OrgIdIssuesRouteImport.update({
+const OrgSlugIssuesRoute = OrgSlugIssuesRouteImport.update({
   id: '/issues',
   path: '/issues',
-  getParentRoute: () => OrgIdLayoutRoute,
+  getParentRoute: () => OrgSlugLayoutRoute,
 } as any)
 const authAuthJoinRoute = authAuthJoinRouteImport.update({
   id: '/join',
@@ -72,35 +72,35 @@ const authAuthAddAccountRoute = authAuthAddAccountRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$orgId': typeof OrgIdLayoutRouteWithChildren
+  '/$orgSlug': typeof OrgSlugLayoutRouteWithChildren
   '/test': typeof TestRoute
-  '/$orgId/issues': typeof OrgIdIssuesRoute
+  '/$orgSlug/issues': typeof OrgSlugIssuesRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
-  '/$orgId/': typeof OrgIdIndexRoute
+  '/$orgSlug/': typeof OrgSlugIndexRoute
   '/add-account': typeof authAuthAddAccountRoute
   '/join': typeof authAuthJoinRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/test': typeof TestRoute
-  '/$orgId/issues': typeof OrgIdIssuesRoute
+  '/$orgSlug/issues': typeof OrgSlugIssuesRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
-  '/$orgId': typeof OrgIdIndexRoute
+  '/$orgSlug': typeof OrgSlugIndexRoute
   '/add-account': typeof authAuthAddAccountRoute
   '/join': typeof authAuthJoinRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/$orgId': typeof OrgIdLayoutRouteWithChildren
+  '/$orgSlug': typeof OrgSlugLayoutRouteWithChildren
   '/test': typeof TestRoute
-  '/$orgId/issues': typeof OrgIdIssuesRoute
+  '/$orgSlug/issues': typeof OrgSlugIssuesRoute
   '/(auth)/_auth': typeof authAuthRouteWithChildren
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
-  '/$orgId/': typeof OrgIdIndexRoute
+  '/$orgSlug/': typeof OrgSlugIndexRoute
   '/(auth)/_auth/add-account': typeof authAuthAddAccountRoute
   '/(auth)/_auth/join': typeof authAuthJoinRoute
 }
@@ -108,41 +108,41 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/$orgId'
+    | '/$orgSlug'
     | '/test'
-    | '/$orgId/issues'
+    | '/$orgSlug/issues'
     | '/login'
     | '/signup'
-    | '/$orgId/'
+    | '/$orgSlug/'
     | '/add-account'
     | '/join'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/test'
-    | '/$orgId/issues'
+    | '/$orgSlug/issues'
     | '/login'
     | '/signup'
-    | '/$orgId'
+    | '/$orgSlug'
     | '/add-account'
     | '/join'
   id:
     | '__root__'
     | '/'
-    | '/$orgId'
+    | '/$orgSlug'
     | '/test'
-    | '/$orgId/issues'
+    | '/$orgSlug/issues'
     | '/(auth)/_auth'
     | '/(auth)/login'
     | '/(auth)/signup'
-    | '/$orgId/'
+    | '/$orgSlug/'
     | '/(auth)/_auth/add-account'
     | '/(auth)/_auth/join'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  OrgIdLayoutRoute: typeof OrgIdLayoutRouteWithChildren
+  OrgSlugLayoutRoute: typeof OrgSlugLayoutRouteWithChildren
   TestRoute: typeof TestRoute
   authAuthRoute: typeof authAuthRouteWithChildren
   authLoginRoute: typeof authLoginRoute
@@ -158,11 +158,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$orgId': {
-      id: '/$orgId'
-      path: '/$orgId'
-      fullPath: '/$orgId'
-      preLoaderRoute: typeof OrgIdLayoutRouteImport
+    '/$orgSlug': {
+      id: '/$orgSlug'
+      path: '/$orgSlug'
+      fullPath: '/$orgSlug'
+      preLoaderRoute: typeof OrgSlugLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -172,12 +172,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$orgId/': {
-      id: '/$orgId/'
+    '/$orgSlug/': {
+      id: '/$orgSlug/'
       path: '/'
-      fullPath: '/$orgId/'
-      preLoaderRoute: typeof OrgIdIndexRouteImport
-      parentRoute: typeof OrgIdLayoutRoute
+      fullPath: '/$orgSlug/'
+      preLoaderRoute: typeof OrgSlugIndexRouteImport
+      parentRoute: typeof OrgSlugLayoutRoute
     }
     '/(auth)/signup': {
       id: '/(auth)/signup'
@@ -200,12 +200,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$orgId/issues': {
-      id: '/$orgId/issues'
+    '/$orgSlug/issues': {
+      id: '/$orgSlug/issues'
       path: '/issues'
-      fullPath: '/$orgId/issues'
-      preLoaderRoute: typeof OrgIdIssuesRouteImport
-      parentRoute: typeof OrgIdLayoutRoute
+      fullPath: '/$orgSlug/issues'
+      preLoaderRoute: typeof OrgSlugIssuesRouteImport
+      parentRoute: typeof OrgSlugLayoutRoute
     }
     '/(auth)/_auth/join': {
       id: '/(auth)/_auth/join'
@@ -224,18 +224,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface OrgIdLayoutRouteChildren {
-  OrgIdIssuesRoute: typeof OrgIdIssuesRoute
-  OrgIdIndexRoute: typeof OrgIdIndexRoute
+interface OrgSlugLayoutRouteChildren {
+  OrgSlugIssuesRoute: typeof OrgSlugIssuesRoute
+  OrgSlugIndexRoute: typeof OrgSlugIndexRoute
 }
 
-const OrgIdLayoutRouteChildren: OrgIdLayoutRouteChildren = {
-  OrgIdIssuesRoute: OrgIdIssuesRoute,
-  OrgIdIndexRoute: OrgIdIndexRoute,
+const OrgSlugLayoutRouteChildren: OrgSlugLayoutRouteChildren = {
+  OrgSlugIssuesRoute: OrgSlugIssuesRoute,
+  OrgSlugIndexRoute: OrgSlugIndexRoute,
 }
 
-const OrgIdLayoutRouteWithChildren = OrgIdLayoutRoute._addFileChildren(
-  OrgIdLayoutRouteChildren,
+const OrgSlugLayoutRouteWithChildren = OrgSlugLayoutRoute._addFileChildren(
+  OrgSlugLayoutRouteChildren,
 )
 
 interface authAuthRouteChildren {
@@ -254,7 +254,7 @@ const authAuthRouteWithChildren = authAuthRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  OrgIdLayoutRoute: OrgIdLayoutRouteWithChildren,
+  OrgSlugLayoutRoute: OrgSlugLayoutRouteWithChildren,
   TestRoute: TestRoute,
   authAuthRoute: authAuthRouteWithChildren,
   authLoginRoute: authLoginRoute,
