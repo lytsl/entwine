@@ -1,40 +1,46 @@
 import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { createLazyIDB, type LazyIDB } from "./idb-wrapper";
-import type { DBSchema } from "idb";
+import { z } from "zod";
+import {
+	createLazyIDB,
+	defineIDBSchema,
+	type LazyIDB,
+	type InferDBSchema,
+} from "./idb-wrapper";
 
-// ── Schema ────────────────────────────────────────────────────────────
-interface TestDB extends DBSchema {
+// ── Define Schema ONCE via Zod ────────────────────────────────────────
+
+const testSchemaDef = defineIDBSchema({
 	users: {
-		key: string;
-		value: { id: string; name: string; email: string; age?: number };
-		indexes: { "by-email": string };
-	};
-	todos: {
-		key: number;
-		value: { id?: number; title: string; completed: number; userId: string };
-		indexes: { "by-user": string; "by-completed": number };
-	};
-}
-
-const testSchema = {
-	stores: {
-		users: {
-			keyPath: "id",
-			indexes: [
-				{ name: "by-email", keyPath: "email", options: { unique: true } },
-			],
-		},
-		todos: {
-			keyPath: "id",
-			autoIncrement: true,
-			indexes: [
-				{ name: "by-user", keyPath: "userId" },
-				{ name: "by-completed", keyPath: "completed" },
-			],
+		value: z.object({
+			id: z.string(),
+			name: z.string(),
+			email: z.string(),
+			age: z.number().optional(),
+		}),
+		keyPath: "id",
+		indexes: {
+			"by-email": { keyPath: "email", unique: true },
 		},
 	},
-};
+	todos: {
+		value: z.object({
+			id: z.number().optional(),
+			title: z.string(),
+			completed: z.number(),
+			userId: z.string(),
+		}),
+		keyPath: "id",
+		autoIncrement: true,
+		indexes: {
+			"by-user": { keyPath: "userId" },
+			"by-completed": { keyPath: "completed" },
+		},
+	},
+});
+
+// Extract types for strict TS completion elsewhere in your app
+type TestDB = InferDBSchema<typeof testSchemaDef>;
 
 // ── Helpers ───────────────────────────────────────────────────────────
 let dbCounter = 0;
@@ -50,12 +56,14 @@ async function cleanupDB(db: LazyIDB<any>, name: string) {
 
 // ── Unit Tests ────────────────────────────────────────────────────────
 describe("LazyIDB – Unit Tests", () => {
+	// Notice you don't even need to pass <TestDB> to createLazyIDB anymore!
 	let db: LazyIDB<TestDB>;
 	let dbName: string;
 
 	beforeEach(() => {
 		dbName = uniqueName();
-		db = createLazyIDB<TestDB>(dbName, 1, testSchema);
+		// It's inferred directly from testSchemaDef
+		db = createLazyIDB(dbName, 1, { stores: testSchemaDef });
 	});
 
 	afterEach(async () => {
@@ -66,7 +74,7 @@ describe("LazyIDB – Unit Tests", () => {
 	describe("Lazy creation", () => {
 		it("creates synchronously, without await", () => {
 			const name = uniqueName("sync");
-			const lazy = createLazyIDB<TestDB>(name, 1, testSchema);
+			const lazy = createLazyIDB(name, 1, { stores: testSchemaDef });
 			// It's a proxy, not a promise – confirm it doesn't have a .then own property
 			expect(lazy.then).toBeUndefined();
 			// Not yet initialized
@@ -284,8 +292,8 @@ describe("LazyIDB – Unit Tests", () => {
 		it("multiple lazy DBs can coexist", async () => {
 			const nameA = uniqueName("coexist-a");
 			const nameB = uniqueName("coexist-b");
-			const a = createLazyIDB<TestDB>(nameA, 1, testSchema);
-			const b = createLazyIDB<TestDB>(nameB, 1, testSchema);
+			const a = createLazyIDB(nameA, 1, { stores: testSchemaDef });
+			const b = createLazyIDB(nameB, 1, { stores: testSchemaDef });
 
 			await a.put("users", { id: "1", name: "fromA", email: "a@t.com" });
 			await b.put("users", { id: "1", name: "fromB", email: "b@t.com" });
@@ -310,12 +318,17 @@ describe("LazyIDB – Integration Tests", () => {
 			stores: {
 				notes: {
 					keyPath: "id",
-					indexes: [
-						{ name: "by-created", keyPath: "createdAt" },
-						{ name: "by-category", keyPath: "category" },
-					],
+					indexes: {
+						"by-created": { keyPath: "createdAt" },
+						"by-category": { keyPath: "category" },
+					},
+					value: z.object({
+						id: z.any(),
+						createdAt: z.any(),
+						category: z.any(),
+					}),
 				},
-				settings: { keyPath: "key" },
+				settings: { keyPath: "key", value: z.object({ key: z.any() }) },
 			},
 		});
 	});
@@ -392,7 +405,7 @@ describe("LazyIDB – Integration Tests", () => {
 			category: "a",
 		});
 
-		const tx = await db.transaction("notes", "readonly");
+		const tx = db.transaction("notes", "readonly");
 		const store = tx.store;
 		let cursor = await store.openCursor();
 		const titles: string[] = [];
@@ -412,18 +425,23 @@ describe("LazyIDB – Schema & Upgrades", () => {
 			stores: {
 				books: {
 					keyPath: "isbn",
-					indexes: [
-						{ name: "by-title", keyPath: "title" },
-						{ name: "by-author", keyPath: "author" },
-					],
+					indexes: {
+						"by-title": { keyPath: "title" },
+						"by-author": { keyPath: "author" },
+					},
+					value: z.object({
+						isbn: z.string(),
+						title: z.string(),
+						author: z.string(),
+					}),
 				},
-				authors: { keyPath: "id", autoIncrement: true },
+				authors: { keyPath: "id", autoIncrement: true, value: z.object() },
 			},
 		});
 
 		await db.put("books", { isbn: "123", title: "T", author: "A" });
 		const byTitle = await db.getFromIndex("books", "by-title", "T");
-		expect(byTitle.isbn).toBe("123");
+		expect(byTitle?.isbn).toBe("123");
 
 		await cleanupDB(db, name);
 	});
@@ -434,7 +452,7 @@ describe("LazyIDB – Schema & Upgrades", () => {
 
 		const name = uniqueName("upgrade");
 		const db = createLazyIDB(name, 1, {
-			stores: { t: { keyPath: "id" } },
+			stores: { t: { keyPath: "id", value: z.object({ id: z.string() }) } },
 			onUpgrade(_db, ov) {
 				called = true;
 				oldVer = ov;
@@ -452,7 +470,7 @@ describe("LazyIDB – Schema & Upgrades", () => {
 		// Just verify they're accepted without error
 		const name = uniqueName("cbs");
 		const db = createLazyIDB(name, 1, {
-			stores: { t: { keyPath: "id" } },
+			stores: { t: { keyPath: "id", value: z.object({ id: z.string() }) } },
 			blocked() {
 				/* noop */
 			},
@@ -471,7 +489,9 @@ describe("LazyIDB – Schema & Upgrades", () => {
 describe("LazyIDB – Proxy behaviour", () => {
 	it("is not a thenable (no .then)", () => {
 		const name = uniqueName("thenable");
-		const db = createLazyIDB(name, 1, { stores: { s: { keyPath: "id" } } });
+		const db = createLazyIDB(name, 1, {
+			stores: { s: { keyPath: "id", value: z.object({ id: z.string() }) } },
+		});
 		// This is critical: if .then is defined, `await db` would resolve
 		// to the underlying IDBPDatabase, breaking the proxy.
 		expect(db.then).toBeUndefined();
@@ -479,7 +499,7 @@ describe("LazyIDB – Proxy behaviour", () => {
 
 	it("works with await on method calls", async () => {
 		const name = uniqueName("await-method");
-		const db = createLazyIDB<TestDB>(name, 1, testSchema);
+		const db = createLazyIDB(name, 1, { stores: testSchemaDef });
 		await db.put("users", { id: "u1", name: "A", email: "a@t.com" });
 		const r = await db.get("users", "u1");
 		expect(r!.name).toBe("A");
@@ -488,7 +508,7 @@ describe("LazyIDB – Proxy behaviour", () => {
 
 	it("__dbPromise gives access to the raw IDBPDatabase", async () => {
 		const name = uniqueName("raw");
-		const db = createLazyIDB<TestDB>(name, 1, testSchema);
+		const db = createLazyIDB(name, 1, { stores: testSchemaDef });
 		await db.count("users"); // trigger init
 		const raw = await db.__dbPromise;
 		expect(raw.name).toBe(name);

@@ -4,7 +4,6 @@ import {
 	type IDBPDatabase,
 	type DBSchema,
 	type OpenDBCallbacks,
-	type IDBValidKey,
 } from "idb";
 import type { z } from "zod";
 
