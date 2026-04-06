@@ -10,14 +10,14 @@ import {
 } from "@tanstack/db";
 import { Store } from "@tanstack/react-store";
 import type { z } from "zod";
-import { db, type IdbModelName } from "@/db";
 import { api } from "@/utils/api";
 import { syncEventBus } from "./events";
 import type { BulkWrite } from "./ws-client";
+import type { LazyIDB } from "../idb-wrapper";
 
 interface WebSocketCollectionConfig<
-	TModelName extends string,
 	TModel extends object = Record<string, unknown>,
+	TModelName extends string = string,
 > extends WithOptional<
 		Omit<
 			WithRequired<
@@ -29,6 +29,7 @@ interface WebSocketCollectionConfig<
 		"getKey"
 	> {
 	modelName: TModelName;
+	db: LazyIDB;
 
 	apiPath?: string;
 }
@@ -53,10 +54,10 @@ export class TimeoutWaitingForIdsError extends TrailBaseDBCollectionError {
 }
 
 export function webSocketCollectionOptions<
-	TModelName extends IdbModelName,
 	TModel extends object = Record<string, unknown>,
+	TModelName extends string = string,
 >(
-	config: WebSocketCollectionConfig<TModelName, TModel>,
+	config: WebSocketCollectionConfig<TModel, TModelName>,
 ): WithRequired<
 	CollectionConfig<TModel, string, z.ZodType<TModel>>,
 	"schema"
@@ -66,6 +67,7 @@ export function webSocketCollectionOptions<
 	config.apiPath ??= `sync/${config.modelName}`;
 	const apiPath = config.apiPath!;
 	const lastSyncId = new Store(0);
+	const db = config.db;
 
 	const awaitLastSyncId = (
 		syncId: number,
@@ -135,6 +137,7 @@ export function webSocketCollectionOptions<
 							case "delete":
 								return modelStore.delete((item.data as any).id);
 						}
+						return Promise.resolve();
 					}),
 					props.tx
 						? []

@@ -20,7 +20,7 @@ export interface ZodIndexDef<T> {
 }
 
 export interface ZodStoreDef<T extends z.ZodTypeAny = any> {
-	value: T;
+	schema: T;
 	keyPath?: keyof z.infer<T> | string;
 	autoIncrement?: boolean;
 	indexes?: Record<string, ZodIndexDef<z.infer<T>>>;
@@ -36,19 +36,19 @@ export type ZodDBSchemaDef = Record<string, ZodStoreDef>;
  */
 export type InferDBSchema<S extends ZodDBSchemaDef> = {
 	[StoreName in keyof S]: {
-		key: S[StoreName]["keyPath"] extends keyof z.infer<S[StoreName]["value"]>
-			? z.infer<S[StoreName]["value"]>[S[StoreName]["keyPath"]]
+		key: S[StoreName]["keyPath"] extends keyof z.infer<S[StoreName]["schema"]>
+			? z.infer<S[StoreName]["schema"]>[S[StoreName]["keyPath"]]
 			: S[StoreName]["autoIncrement"] extends true
 				? number
 				: IDBValidKey;
-		value: z.infer<S[StoreName]["value"]>;
+		value: z.infer<S[StoreName]["schema"]>;
 		indexes: S[StoreName]["indexes"] extends Record<string, any>
 			? {
 					[IndexName in keyof S[StoreName]["indexes"]]: S[StoreName]["indexes"][IndexName]["keyPath"] extends keyof z.infer<
-						S[StoreName]["value"]
+						S[StoreName]["schema"]
 					>
 						? z.infer<
-								S[StoreName]["value"]
+								S[StoreName]["schema"]
 							>[S[StoreName]["indexes"][IndexName]["keyPath"]]
 						: IDBValidKey;
 				}

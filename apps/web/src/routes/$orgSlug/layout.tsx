@@ -1,13 +1,21 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./-components/app-sidebar";
+import { createLazyIDB } from "@/lib/idb-wrapper";
+import { idbSchema } from "@/lib/db/schema";
+import { createTanStackCollections } from "@/lib/collection-wrapper";
 
 export const Route = createFileRoute("/$orgSlug")({
 	component: RouteComponent,
 	beforeLoad: async ({ context, params }) => {
 		sessionStorage.setItem("$orgSlug", params.orgSlug);
+		const db = createLazyIDB(params.orgSlug, 1, { stores: idbSchema });
+		const collections = createTanStackCollections(db as any, idbSchema);
+
 		return {
 			...context,
+			db,
+			collections,
 		};
 	},
 });
