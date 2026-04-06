@@ -4,86 +4,96 @@ import {
 	type IDBPDatabase,
 	type DBSchema,
 	type OpenDBCallbacks,
+	type IDBValidKey,
 } from "idb";
+import type { z } from "zod";
 
 // Re-export everything from idb so users have full access to types
 export type { DBSchema, IDBPDatabase, OpenDBCallbacks } from "idb";
 export { deleteDB, wrap, unwrap } from "idb";
 
-/**
- * Schema definition for declarative store/index creation.
- */
-export interface StoreSchema {
-	keyPath?: string;
+// ── Zod Schema Definitions ────────────────────────────────────────────
+
+export interface ZodIndexDef<T> {
+	keyPath: keyof T | string; // string fallback for nested 'a.b'
+	unique?: boolean;
+	multiEntry?: boolean;
+}
+
+export interface ZodStoreDef<T extends z.ZodTypeAny = any> {
+	value: T;
+	keyPath?: keyof z.infer<T> | string;
 	autoIncrement?: boolean;
-	indexes?: {
-		name: string;
-		keyPath: string | string[];
-		options?: IDBIndexParameters;
-	}[];
+	indexes?: Record<string, ZodIndexDef<z.infer<T>>>;
 }
 
-export interface DatabaseSchema<DBTypes extends DBSchema | unknown = unknown> {
-	stores: Record<string, StoreSchema>;
-	/** Called after stores/indexes are created during upgrade. */
-	onUpgrade?: OpenDBCallbacks<DBTypes>["upgrade"];
-	blocked?: OpenDBCallbacks<DBTypes>["blocked"];
-	blocking?: OpenDBCallbacks<DBTypes>["blocking"];
-	terminated?: OpenDBCallbacks<DBTypes>["terminated"];
-}
+export type ZodDBSchemaDef = Record<string, ZodStoreDef>;
+
+// ── Type Inference Magic ──────────────────────────────────────────────
 
 /**
- * A lazy-initializing proxy over IDBPDatabase.
- *
- * Every property access and method call on the proxy is forwarded
- * to the real IDBPDatabase – which is opened once on first use.
- *
- * Because the proxy itself is synchronous you can create it at
- * module scope without `await`:
- *
- * ```ts
- * const db = createLazyIDB<MyDB>('my-db', 1, { stores: { … } });
- * // later …
- * const item = await db.get('store', key);
- * ```
+ * Dynamically extracts the exact DBSchema shape required by `idb`
+ * directly from your Zod runtime definitions.
  */
+export type InferDBSchema<S extends ZodDBSchemaDef> = {
+	[StoreName in keyof S]: {
+		key: S[StoreName]["keyPath"] extends keyof z.infer<S[StoreName]["value"]>
+			? z.infer<S[StoreName]["value"]>[S[StoreName]["keyPath"]]
+			: S[StoreName]["autoIncrement"] extends true
+				? number
+				: IDBValidKey;
+		value: z.infer<S[StoreName]["value"]>;
+		indexes: S[StoreName]["indexes"] extends Record<string, any>
+			? {
+					[IndexName in keyof S[StoreName]["indexes"]]: S[StoreName]["indexes"][IndexName]["keyPath"] extends keyof z.infer<
+						S[StoreName]["value"]
+					>
+						? z.infer<
+								S[StoreName]["value"]
+							>[S[StoreName]["indexes"][IndexName]["keyPath"]]
+						: IDBValidKey;
+				}
+			: {};
+	};
+} & DBSchema;
+
+/** Identity function to enforce strict type inference on your schema object */
+export function defineIDBSchema<T extends ZodDBSchemaDef>(schema: T): T {
+	return schema;
+}
+
+// ── Database Configuration ────────────────────────────────────────────
+
+export interface DatabaseSchema<T extends ZodDBSchemaDef> {
+	stores: T;
+	/** Called after stores/indexes are created during upgrade. */
+	onUpgrade?: OpenDBCallbacks<InferDBSchema<T>>["upgrade"];
+	blocked?: OpenDBCallbacks<InferDBSchema<T>>["blocked"];
+	blocking?: OpenDBCallbacks<InferDBSchema<T>>["blocking"];
+	terminated?: OpenDBCallbacks<InferDBSchema<T>>["terminated"];
+}
+
 export type LazyIDB<DBTypes extends DBSchema | unknown = unknown> =
 	IDBPDatabase<DBTypes> & {
-		/**
-		 * Returns the underlying IDBPDatabase promise.
-		 * Useful when you need the raw instance (e.g. to call `.close()`).
-		 */
 		readonly __dbPromise: Promise<IDBPDatabase<DBTypes>>;
-		/** True after the first access has triggered `openDB`. */
 		readonly __initialized: boolean;
-		/** Always undefined – prevents the proxy from being treated as a thenable. */
 		readonly then: undefined;
 	};
 
-/**
- * Create a lazily-initialized IDB database wrapped in a Proxy.
- *
- * The returned object looks and feels exactly like an `IDBPDatabase` –
- * every property/method is available – but the actual `openDB` call is
- * deferred until the first interaction.
- *
- * @param name     Database name
- * @param version  Schema version number
- * @param schema   Declarative schema (stores, indexes, callbacks)
- */
-export function createLazyIDB<DBTypes extends DBSchema | unknown = unknown>(
+export function createLazyIDB<T extends ZodDBSchemaDef>(
 	name: string,
 	version: number,
-	schema: DatabaseSchema<DBTypes>,
-): LazyIDB<DBTypes> {
-	let dbPromise: Promise<IDBPDatabase<DBTypes>> | null = null;
+	schema: DatabaseSchema<T>,
+): LazyIDB<InferDBSchema<T>> {
+	// Note how LazyIDB now infers the DBTypes automatically via InferDBSchema<T>
+	let dbPromise: Promise<IDBPDatabase<InferDBSchema<T>>> | null = null;
 	let initialized = false;
 
-	function ensureDB(): Promise<IDBPDatabase<DBTypes>> {
+	function ensureDB(): Promise<IDBPDatabase<InferDBSchema<T>>> {
 		if (dbPromise) return dbPromise;
 
 		initialized = true;
-		dbPromise = openDB<DBTypes>(name, version, {
+		dbPromise = openDB<InferDBSchema<T>>(name, version, {
 			upgrade(db, oldVersion, newVersion, transaction, event) {
 				const existingStores = new Set<string>(
 					db.objectStoreNames as unknown as Iterable<string>,
@@ -96,21 +106,26 @@ export function createLazyIDB<DBTypes extends DBSchema | unknown = unknown>(
 
 					if (!existingStores.has(storeName)) {
 						store = db.createObjectStore(storeName as any, {
-							keyPath: storeDef.keyPath,
+							keyPath: storeDef.keyPath as string | string[],
 							autoIncrement: storeDef.autoIncrement,
 						});
 					} else {
 						store = transaction.objectStore(storeName as any);
 					}
 
-					for (const idx of storeDef.indexes ?? []) {
-						if (!store.indexNames.contains(idx.name as any)) {
-							(store as any).createIndex(idx.name, idx.keyPath, idx.options);
+					// Adjusted to loop over the Record structure instead of an Array
+					for (const [idxName, idxDef] of Object.entries(
+						storeDef.indexes ?? {},
+					)) {
+						if (!store.indexNames.contains(idxName as any)) {
+							(store as any).createIndex(idxName, idxDef.keyPath, {
+								unique: idxDef.unique,
+								multiEntry: idxDef.multiEntry,
+							});
 						}
 					}
 				}
 
-				// Forward to user-supplied upgrade if provided
 				schema.onUpgrade?.(db, oldVersion, newVersion, transaction, event);
 			},
 			blocked: schema.blocked,
@@ -121,47 +136,16 @@ export function createLazyIDB<DBTypes extends DBSchema | unknown = unknown>(
 		return dbPromise;
 	}
 
-	// The proxy target is an empty function so we can also intercept `apply`
-	// (not that IDBPDatabase is callable, but it keeps the proxy general).
-	const target = Object.create(null) as IDBPDatabase<DBTypes>;
+	const target = Object.create(null) as IDBPDatabase<InferDBSchema<T>>;
 
 	const proxy = new Proxy(target, {
 		get(_target, prop, _receiver) {
-			// Expose internal helpers
 			if (prop === "__dbPromise") return ensureDB();
 			if (prop === "__initialized") return initialized;
-
-			// `then` must return undefined so the proxy is NOT treated
-			// as a thenable (which would break `await proxy.get(…)` etc.)
 			if (prop === "then") return undefined;
 
-			// Every other property access lazily opens the DB and
-			// returns a promise-based trampoline.
 			const dbP = ensureDB();
 
-			// For known sync properties on IDBDatabase we can't really
-			// return them synchronously since we don't have the db yet.
-			// Instead we return an async function that resolves and
-			// calls through. This keeps the API consistent: every call
-			// returns a promise.
-			//
-			// If the underlying value is a function we return an async
-			// wrapper; if it's a plain value we return a promise for it
-			// (via a getter-like proxy that auto-awaits).
-
-			// We return an async function wrapper.  The caller will
-			// `await db.someMethod(args)` which works naturally.
-			// For property reads (like `db.name`, `db.objectStoreNames`)
-			// the caller can `await db.name`.
-			//
-			// BUT – `transaction()` returns a *synchronous* transaction
-			// object with `.store`, `.done`, etc.  We need to handle
-			// this properly by returning a "then-able" wrapper.
-
-			// Strategy: return a function that, when called, awaits the
-			// db and calls the real method.  If NOT called (i.e. property
-			// read), we make the function also a thenable so `await db.name`
-			// works.
 			const asyncFn = async (...args: unknown[]) => {
 				const db = await dbP;
 				const val = (db as any)[prop];
@@ -171,15 +155,12 @@ export function createLazyIDB<DBTypes extends DBSchema | unknown = unknown>(
 				return val;
 			};
 
-			// Make the function thenable so property access via `await` works:
-			//   const name = await db.name;
 			asyncFn.then = (
 				onFulfilled?: (v: unknown) => unknown,
 				onRejected?: (e: unknown) => unknown,
 			) => {
 				const p = dbP.then((db) => {
 					const val = (db as any)[prop];
-					// If the property itself is a function, return it bound
 					if (typeof val === "function") return val.bind(db);
 					return val;
 				});
@@ -188,7 +169,7 @@ export function createLazyIDB<DBTypes extends DBSchema | unknown = unknown>(
 
 			return asyncFn;
 		},
-	}) as unknown as LazyIDB<DBTypes>;
+	}) as unknown as LazyIDB<InferDBSchema<T>>;
 
 	return proxy;
 }
