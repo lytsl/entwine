@@ -1,11 +1,11 @@
 import "fake-indexeddb/auto";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
 	createLazyIDB,
 	defineIDBSchema,
-	type LazyIDB,
 	type InferDBSchema,
+	type LazyIDB,
 } from "./idb-wrapper";
 
 // ── Define Schema ONCE via Zod ────────────────────────────────────────

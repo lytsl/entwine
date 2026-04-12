@@ -3,7 +3,7 @@ import {
 	createCollection,
 	localOnlyCollectionOptions,
 } from "@tanstack/react-db"; //
-import { z } from "zod";
+import type { z } from "zod";
 
 // Assuming ZodDBSchemaDef is imported from your previous definitions
 import type { LazyIDB, ZodDBSchemaDef } from "./idb-wrapper";

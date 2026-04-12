@@ -1,15 +1,15 @@
 /** biome-ignore-all lint/suspicious/noThenProperty: idb wrapper */
 import {
-	openDB,
-	type IDBPDatabase,
 	type DBSchema,
+	type IDBPDatabase,
 	type OpenDBCallbacks,
+	openDB,
 } from "idb";
 import type { z } from "zod";
 
 // Re-export everything from idb so users have full access to types
 export type { DBSchema, IDBPDatabase, OpenDBCallbacks } from "idb";
-export { deleteDB, wrap, unwrap } from "idb";
+export { deleteDB, unwrap, wrap } from "idb";
 
 // ── Zod Schema Definitions ────────────────────────────────────────────
 

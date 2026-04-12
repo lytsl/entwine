@@ -1,38 +1,38 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "./-components/app-sidebar";
-import { createLazyIDB } from "@/lib/idb-wrapper";
-import { idbSchema } from "@/lib/db/schema";
-import { createTanStackCollections } from "@/lib/collection-wrapper";
 import { authClient } from "@/lib/auth-client";
+import { createTanStackCollections } from "@/lib/collection-wrapper";
+import { idbSchema } from "@/lib/db/schema";
+import { createLazyIDB } from "@/lib/idb-wrapper";
+import { AppSidebar } from "./-components/app-sidebar";
 
 export const Route = createFileRoute("/$orgSlug")({
-  component: RouteComponent,
-  beforeLoad: async ({ context, params }) => {
-    sessionStorage.setItem("$orgSlug", params.orgSlug);
-    const db = createLazyIDB(params.orgSlug, 1, { stores: idbSchema });
-    const collections = createTanStackCollections(db as any, idbSchema);
+	component: RouteComponent,
+	beforeLoad: async ({ context, params }) => {
+		sessionStorage.setItem("$orgSlug", params.orgSlug);
+		const db = createLazyIDB(params.orgSlug, 1, { stores: idbSchema });
+		const collections = createTanStackCollections(db as any, idbSchema);
 
-    const sessionResponse = await authClient.getSession();
+		const sessionResponse = await authClient.getSession();
 
-    return {
-      ...context,
-      ...sessionResponse.data,
-      db,
-      collections,
-      orgSlug: params.orgSlug,
-    };
-  },
+		return {
+			...context,
+			...sessionResponse.data,
+			db,
+			collections,
+			orgSlug: params.orgSlug,
+		};
+	},
 });
 
 function RouteComponent() {
-  return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="flex min-h-svh flex-1 flex-col bg-sidebar md:min-h-min">
-          <div className="m-2 ms-0 flex-1 rounded-md border border-[oklch(0.2655_0.0094_269.8)] bg-background shadow-subtle">
-            {/*<header className=" ">
+	return (
+		<SidebarProvider>
+			<AppSidebar />
+			<SidebarInset>
+				<div className="flex min-h-svh flex-1 flex-col bg-sidebar md:min-h-min">
+					<div className="m-2 ms-0 flex-1 rounded-md border border-[oklch(0.2655_0.0094_269.8)] bg-background shadow-subtle">
+						{/*<header className=" ">
 							<div className="flex min-h-10 items-center gap-2 border-b border-b-[oklch(0.2655_0.0094_269.8)] px-4 ps-8 pe-6">
 								<SidebarTrigger className="-ml-1" />
 								<Separator
@@ -56,10 +56,10 @@ function RouteComponent() {
 							<div className="min-h-10 border-b border-b-[oklch(0.2655_0.0094_269.8)] ps-8 pe-6" />
 						</header>*/}
 
-            <Outlet />
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
-  );
+						<Outlet />
+					</div>
+				</div>
+			</SidebarInset>
+		</SidebarProvider>
+	);
 }

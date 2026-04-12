@@ -12,5 +12,5 @@ function RouteComponent() {
 		<MainLayout header={<Header />}>
 			<AllIssues />
 		</MainLayout>
-	)
+	);
 }

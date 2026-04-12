@@ -11,9 +11,9 @@ import {
 import { Store } from "@tanstack/react-store";
 import type { z } from "zod";
 import { api } from "@/utils/api";
+import type { LazyIDB } from "../idb-wrapper";
 import { syncEventBus } from "./events";
 import type { BulkWrite } from "./ws-client";
-import type { LazyIDB } from "../idb-wrapper";
 
 interface WebSocketCollectionConfig<
 	TModel extends object = Record<string, unknown>,
