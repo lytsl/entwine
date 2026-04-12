@@ -5,10 +5,6 @@ export const Route = createFileRoute("/(auth)/_auth/join")({
 	component: RouteComponent,
 });
 
-function RouteComponent({ className, ...props }: React.ComponentProps<"div">) {
-	const _navigate = useNavigate({
-		from: "/",
-	});
-
+function RouteComponent() {
 	return <CreateWorkspaceScreen variant="join" />;
 }

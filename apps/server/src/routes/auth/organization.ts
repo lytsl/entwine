@@ -35,13 +35,6 @@ const app = createAuthApp()
 			user: c.get("user"),
 		};
 		return c.json(response, 200);
-	})
-	.get("/get-session-organization-list", async (c) => {
-		const response = {
-			session: c.get("session"),
-			user: c.get("user"),
-		};
-		return c.json(response, 200);
 	});
 
 export default app;

@@ -60,7 +60,7 @@ const WorkspaceForm = () => {
 		onSubmit: async ({ value }) => {
 			authClient.organization.create(value, {
 				onSuccess: () => {
-					navigate({ to: "/$orgId", params: { orgId: value.slug } });
+					navigate({ to: "/$orgSlug", params: { orgSlug: value.slug } });
 				},
 				onError: (error) => {
 					toast.error(error.error.message || error.error.statusText);
@@ -226,8 +226,7 @@ const UserDropdown = () => {
 };
 
 export default function CreateWorkspaceScreen({
-	variant = "onboarding", // Default to '/' behavior
-	userEmail = "user@example.com",
+	variant = "onboarding",
 }: CreateWorkspaceProps) {
 	const invitationsListQuery = useSuspenseQuery({
 		queryKey: ["authClient.organization.listInvitations"],

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronDownIcon } from "lucide-react";
 import {
 	DropdownMenu,
@@ -25,14 +25,18 @@ import { Route } from "../layout";
 import { CreateNewIssue } from "./create-new-issue";
 
 export function OrganizationSwitcher() {
-	const { session, orgSlug } = Route.useRouteContext();
+	const navigate = useNavigate();
+	const { session, orgSlug, user } = Route.useRouteContext();
 
-	const { data: orgList } = authClient.useListOrganizations();
+	const { data: orgList, error, isPending } = authClient.useListOrganizations();
 	const currentOrg = orgList?.find((o) => o.slug === orgSlug);
-	const _sq = useQuery({
-		queryKey: ["sq"],
-		queryFn: () => authClient.multiSession.listDeviceSessions(),
-	});
+
+	if (error) {
+		return navigate({ to: "/login" });
+	}
+	if (!isPending && orgList?.length === 0) {
+		return navigate({ to: "/join" });
+	}
 
 	return (
 		<SidebarMenu>
@@ -75,14 +79,24 @@ export function OrganizationSwitcher() {
 								</DropdownMenuSubTrigger>
 								<DropdownMenuPortal>
 									<DropdownMenuSubContent>
-										<DropdownMenuLabel>abc12345@example.com</DropdownMenuLabel>
-										<DropdownMenuItem>
-											<div className="inline-flex size-5 items-center justify-center rounded bg-primary text-primary-foreground uppercase">
-												AB
-											</div>
-											abc12345
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
+										<DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
+										{orgList?.map((org) => (
+											<>
+												<DropdownMenuItem>
+													<div
+														style={{
+															background: (currentOrg?.metadata as any)?.color,
+														}}
+														className="inline-flex size-5 items-center justify-center rounded bg-primary text-primary-foreground uppercase"
+													>
+														{org.name?.substring(0, 2)}
+													</div>
+													<span>{org.name}</span>
+												</DropdownMenuItem>
+												<DropdownMenuSeparator />
+											</>
+										))}
+
 										<DropdownMenuItem>
 											Create or join workspace
 										</DropdownMenuItem>
