@@ -29,7 +29,7 @@ export function OrganizationSwitcher() {
 
 	const { data: orgList } = authClient.useListOrganizations();
 	const currentOrg = orgList?.find((o) => o.slug === orgSlug);
-	const sq = useQuery({
+	const _sq = useQuery({
 		queryKey: ["sq"],
 		queryFn: () => authClient.multiSession.listDeviceSessions(),
 	});

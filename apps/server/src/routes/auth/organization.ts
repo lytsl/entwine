@@ -2,7 +2,6 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { type } from "arktype";
 import { createAuthApp } from "@/auth/auth.factory";
 import { auth } from "@/auth/better-auth";
-import { createOrgApp } from "@/auth/org-auth.factory";
 
 const app = createAuthApp()
 	.post(

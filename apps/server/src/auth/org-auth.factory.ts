@@ -6,7 +6,6 @@ import type { BunWebSocketData } from "hono/bun";
 import { createMiddleware } from "hono/factory";
 import { dbManager } from "@/db/db-manager";
 import mainSchema from "@/db/schema-main";
-import type { THonoPrivateEnv } from "@/routes/types";
 import type { auth } from "./better-auth";
 
 export const authGuard = createMiddleware(async (c, next) => {

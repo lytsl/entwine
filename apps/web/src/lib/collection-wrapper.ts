@@ -1,8 +1,4 @@
-import {
-	type Collection,
-	createCollection,
-	localOnlyCollectionOptions,
-} from "@tanstack/react-db"; //
+import { type Collection, createCollection } from "@tanstack/react-db"; //
 import type { z } from "zod";
 
 // Assuming ZodDBSchemaDef is imported from your previous definitions
@@ -27,7 +23,7 @@ export function createTanStackCollections<T extends ZodDBSchemaDef>(
 
 	for (const [storeName, storeDef] of Object.entries(schema)) {
 		// Fallback to "id" if keyPath isn't explicitly defined in the schema
-		const keyProp = (storeDef.keyPath as string) || "id";
+		const _keyProp = (storeDef.keyPath as string) || "id";
 
 		// TanStack DB collections require a unique key identifier for normalization.
 		collections[storeName] = createCollection(

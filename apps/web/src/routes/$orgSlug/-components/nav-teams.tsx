@@ -1,6 +1,5 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	Archive,
 	Bell,
@@ -30,7 +29,6 @@ import {
 	SidebarMenuSub,
 } from "@/components/ui/sidebar";
 import IssueIcon from "@/icons/issue-icon";
-import { authClient } from "@/lib/auth-client";
 import { shortcutRegistry } from "@/lib/shortcut-registry";
 import { Route } from "../layout";
 import { NavGroup } from "./nav-group";

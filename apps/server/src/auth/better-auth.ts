@@ -1,11 +1,7 @@
-import {
-	getRandomSafeColor,
-	getRandomSafeEmoji,
-} from "@entwine/utility/random";
+import { getRandomSafeColor } from "@entwine/utility/random";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, multiSession, organization } from "better-auth/plugins";
-import { and, eq, like } from "drizzle-orm";
 import { dbManager } from "@/db/db-manager";
 import type mainSchema from "@/db/schema-main";
 import schema from "@/db/schema-main/auth";

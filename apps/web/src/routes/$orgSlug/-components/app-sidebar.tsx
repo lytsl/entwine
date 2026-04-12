@@ -1,6 +1,5 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	BoxIcon,
 	FocusIcon,
@@ -19,7 +18,6 @@ import {
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { authClient } from "@/lib/auth-client";
 import {
 	type ShortcutRegistryItem,
 	shortcutRegistry,
@@ -31,7 +29,7 @@ import { NavMenuItem } from "./nav-menu-item";
 import { NavTeams } from "./nav-teams";
 import { OrganizationSwitcher } from "./org-switcher";
 
-const data: {
+const _data: {
 	id: string;
 	items: {
 		title: string;

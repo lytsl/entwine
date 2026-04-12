@@ -1,4 +1,4 @@
-import { defineRelations, sql } from "drizzle-orm";
+import { defineRelations } from "drizzle-orm";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { customJson } from "../utils/custom-drizzle-types";
 
