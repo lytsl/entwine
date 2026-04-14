@@ -33,8 +33,8 @@ function RouteComponent() {
 		<SidebarProvider>
 			<AppSidebar />
 			<SidebarInset>
-				<div className="flex min-h-svh flex-1 flex-col bg-sidebar md:min-h-min">
-					<div className="m-2 ms-0 flex-1 rounded-md border border-[oklch(0.2655_0.0094_269.8)] bg-background shadow-subtle">
+				<div className="flex flex-1 flex-col bg-sidebar md:min-h-min">
+					<div className="m-2 ms-0 flex-1 overflow-hidden rounded-md border border-[oklch(0.2655_0.0094_269.8)] bg-background shadow-subtle">
 						{/*<header className=" ">
 							<div className="flex min-h-10 items-center gap-2 border-b border-b-[oklch(0.2655_0.0094_269.8)] px-4 ps-8 pe-6">
 								<SidebarTrigger className="-ml-1" />

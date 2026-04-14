@@ -33,7 +33,7 @@ export default function MainLayout({
 		2: "h-[calc(100svh-80px)] lg:h-[calc(100svh-96px)]",
 	};
 	return (
-		<div className="h-svh w-full overflow-hidden lg:p-2">
+		<div className="h-full w-full overflow-hidden lg:p-2">
 			<div className="flex h-full w-full flex-col items-center justify-start overflow-hidden bg-container lg:rounded-md lg:border">
 				{header}
 				<div
