@@ -4,13 +4,13 @@ import MainLayout from "@/components/layout/main-layout";
 import Header from "../../-components/issues/header";
 
 export const Route = createFileRoute("/$orgSlug/team/$teamSlug/$view")({
-  component: RouteComponent,
+	component: RouteComponent,
 });
 
 function RouteComponent() {
-  return (
-    <MainLayout header={<Header />}>
-      <AllIssues />
-    </MainLayout>
-  );
+	return (
+		<MainLayout header={<Header />}>
+			<AllIssues />
+		</MainLayout>
+	);
 }

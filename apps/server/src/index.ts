@@ -12,33 +12,33 @@ import { env } from "../env";
 import type { THonoBaseEnv } from "./routes/types";
 
 const app = new Hono<THonoBaseEnv>()
-  .use(logger())
-  .use(
-    "/*",
-    cors({
-      origin: env.CORS_ORIGIN,
-      allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "DELETE"],
-      allowHeaders: ["Content-Type", "Authorization", "x-organization-slug"],
-      credentials: true,
-    }),
-  )
-  .use("*", async (c, next) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+	.use(logger())
+	.use(
+		"/*",
+		cors({
+			origin: env.CORS_ORIGIN,
+			allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "DELETE"],
+			allowHeaders: ["Content-Type", "Authorization", "x-organization-slug"],
+			credentials: true,
+		}),
+	)
+	.use("*", async (c, next) => {
+		const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
-    c.set("user", session?.user || null);
-    c.set("session", session?.session || null);
-    c.set("organization", session?.organization || null);
+		c.set("user", session?.user || null);
+		c.set("session", session?.session || null);
+		c.set("organization", session?.organization || null);
 
-    await next();
-  })
-  .get("/health", (c) => {
-    return c.json("OK");
-  })
-  .route("/ws", wsRouter)
-  .route("/delta", deltaRouter)
-  .route("/sync/issue", issueSyncRouter)
-  .route("/auth/organization", origanizationRouter)
-  .on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+		await next();
+	})
+	.get("/health", (c) => {
+		return c.json("OK");
+	})
+	.route("/ws", wsRouter)
+	.route("/delta", deltaRouter)
+	.route("/sync/issue", issueSyncRouter)
+	.route("/auth/organization", origanizationRouter)
+	.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 // export const apiHandler = new OpenAPIHandler(appRouter, {
 // 	plugins: [
@@ -54,11 +54,11 @@ const app = new Hono<THonoBaseEnv>()
 // });
 
 const server: Server<BunWebSocketData> = Bun.serve({
-  port: env.PORT,
-  fetch: (request: Request, Env?: unknown, executionCtx?: ExecutionContext) => {
-    return app.fetch(request, { ...(Env || {}), server }, executionCtx);
-  },
-  websocket,
+	port: env.PORT,
+	fetch: (request: Request, Env?: unknown, executionCtx?: ExecutionContext) => {
+		return app.fetch(request, { ...(Env || {}), server }, executionCtx);
+	},
+	websocket,
 });
 
 export type Auth = typeof auth;
