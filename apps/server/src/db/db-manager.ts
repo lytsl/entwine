@@ -11,77 +11,94 @@ import orgSchema from "./schema-org";
 import { createDrizzleExtension } from "./utils/sync-extension";
 
 class DatabaseManager {
-	private client = new Database(env.MAIN_DATABASE_PATH);
-	db = drizzle({
-		client: this.client,
-		schema: mainSchema,
-		relations: mainRelations,
-	});
+  private client: Database;
+  db = drizzle({
+    schema: mainSchema,
+    relations: mainRelations,
+  });
 
-	private orgConnections = new Map<string, ReturnType<typeof drizzle>>();
-	private pendingConnections = new Map<
-		string,
-		Promise<ReturnType<typeof drizzle>>
-	>();
+  private orgConnections = new Map<string, ReturnType<typeof drizzle>>();
+  private pendingConnections = new Map<
+    string,
+    Promise<ReturnType<typeof drizzle>>
+  >();
 
-	async getOrgDb(organizationId: string) {
-		if (this.orgConnections.has(organizationId)) {
-			return this.orgConnections.get(organizationId)!;
-		}
+  constructor() {
+    this.client = new Database(env.MAIN_DATABASE_PATH, {
+      safeIntegers: undefined,
+      strict: undefined,
+    });
+    this.client.run("PRAGMA journal_mode = WAL;");
+    this.db = drizzle({
+      client: this.client,
+      schema: mainSchema,
+      relations: mainRelations,
+    });
+  }
 
-		if (this.pendingConnections.has(organizationId)) {
-			return this.pendingConnections.get(organizationId)!;
-		}
+  async getOrgDb(organizationId: string) {
+    if (this.orgConnections.has(organizationId)) {
+      return this.orgConnections.get(organizationId)!;
+    }
 
-		const initPromise = this._initializeOrgDb(organizationId);
-		this.pendingConnections.set(organizationId, initPromise);
+    if (this.pendingConnections.has(organizationId)) {
+      return this.pendingConnections.get(organizationId)!;
+    }
 
-		try {
-			const orgDb = await initPromise;
-			return orgDb;
-		} finally {
-			this.pendingConnections.delete(organizationId);
-		}
-	}
+    const initPromise = this._initializeOrgDb(organizationId);
+    this.pendingConnections.set(organizationId, initPromise);
 
-	private async _initializeOrgDb(organizationId: string) {
-		const dbPath = path.join(
-			appRoot,
-			env.ORG_FOLDER_PATH,
-			`${organizationId}.sqlite`,
-		);
-		const dbDirectory = path.join(dbPath, "..");
-		if (!fs.existsSync(dbDirectory)) {
-			fs.mkdirSync(dbDirectory, { recursive: true });
-		}
-		const isNewDatabase = !fs.existsSync(dbPath);
+    try {
+      const orgDb = await initPromise;
+      return orgDb;
+    } finally {
+      this.pendingConnections.delete(organizationId);
+    }
+  }
 
-		if (isNewDatabase) {
-			fs.copyFileSync(path.join(appRoot, env.ORG_DATABASE_PATH), dbPath);
-		}
+  private async _initializeOrgDb(organizationId: string) {
+    const dbPath = path.join(
+      appRoot,
+      env.ORG_FOLDER_PATH,
+      `${organizationId}.sqlite`,
+    );
+    const dbDirectory = path.join(dbPath, "..");
+    if (!fs.existsSync(dbDirectory)) {
+      fs.mkdirSync(dbDirectory, { recursive: true });
+    }
+    const isNewDatabase = !fs.existsSync(dbPath);
 
-		const client = new Database(dbPath);
-		const orgDb = createDrizzleExtension(
-			drizzle({ client, schema: orgSchema }),
-		);
+    if (isNewDatabase) {
+      fs.copyFileSync(path.join(appRoot, env.ORG_DATABASE_PATH), dbPath);
+    }
 
-		if (!isNewDatabase) {
-			const errorResponse = migrate(orgDb, {
-				migrationsFolder: path.join(appRoot, "src/db/migrations-org"),
-			});
-			if (errorResponse) {
-				console.error(errorResponse);
-				throw new Error(
-					`Error applying migration to ${organizationId}.sqlite`,
-					{ cause: errorResponse },
-				);
-			}
-		}
+    const client = new Database(dbPath, {
+      safeIntegers: undefined,
+      strict: undefined,
+    });
+    client.run("PRAGMA journal_mode = WAL;");
 
-		this.orgConnections.set(organizationId, orgDb);
+    const orgDb = createDrizzleExtension(
+      drizzle({ client, schema: orgSchema }),
+    );
 
-		return orgDb;
-	}
+    if (!isNewDatabase) {
+      const errorResponse = migrate(orgDb, {
+        migrationsFolder: path.join(appRoot, "src/db/migrations-org"),
+      });
+      if (errorResponse) {
+        console.error(errorResponse);
+        throw new Error(
+          `Error applying migration to ${organizationId}.sqlite`,
+          { cause: errorResponse },
+        );
+      }
+    }
+
+    this.orgConnections.set(organizationId, orgDb);
+
+    return orgDb;
+  }
 }
 
 export const dbManager = new DatabaseManager();

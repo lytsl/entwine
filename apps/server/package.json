@@ -1,48 +1,48 @@
 {
-	"name": "@entwine/server",
-	"type": "module",
-	"exports": {
-		".": {
-			"default": null,
-			"types": "./types/src/index.d.ts"
-		}
-	},
-	"scripts": {
-		"build": "tsdown",
-		"build:types": "tsgo",
-		"check-types": "tsc -b",
-		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
-		"dev": "bun run --hot src/index.ts",
-		"start": "bun run dist/index.js",
-		"auth:generate": "bunx --bun @better-auth/cli generate --config=./src/auth/better-auth.ts",
-		"db:local": "turso dev --db-file local.db",
-		"db:main:push": "drizzle-kit push --config=drizzle-main.config.ts",
-		"db:org:push": "drizzle-kit push --config=drizzle-org.config.ts",
-		"db:push": "bun run --parallel db:main:migrate db:org:migrate",
-		"db:studio": "drizzle-kit studio",
-		"db:update": "bun run --sequential db:generate db:migrate",
-		"db:main:generate": "drizzle-kit generate --config=drizzle-main.config.ts",
-		"db:org:generate": "drizzle-kit generate --config=drizzle-org.config.ts",
-		"db:generate": "bun run --parallel db:main:generate db:org:generate",
-		"db:migrate": "bun drizzle-migrate.ts --config=drizzle-main.config.ts,drizzle-org.config.ts"
-	},
-	"dependencies": {
-		"@entwine/utility": "workspace:*",
-		"@hono/arktype-validator": "^2.0.1",
-		"arktype": "catalog:",
-		"better-auth": "catalog:",
-		"dotenv": "catalog:",
-		"drizzle-orm": "beta",
-		"hono": "catalog:",
-		"hono-openapi": "^1.2.0"
-	},
-	"devDependencies": {
-		"@better-auth/cli": "^1.4.18",
-		"@entwine/config": "workspace:*",
-		"@types/bun": "catalog:",
-		"@typescript/native-preview": "catalog:",
-		"drizzle-kit": "beta",
-		"tsdown": "^0.20.1",
-		"typescript": "catalog:"
-	}
+  "name": "@entwine/server",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": null,
+      "types": "./types/src/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "build:types": "tsgo",
+    "check-types": "tsc -b",
+    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run dist/index.js",
+    "auth:generate": "bunx --bun @better-auth/cli generate --config=./src/auth/better-auth.ts",
+    "db:local": "turso dev --db-file local.db",
+    "db:main:push": "drizzle-kit push --config=drizzle-main.config.ts",
+    "db:org:push": "drizzle-kit push --config=drizzle-org.config.ts",
+    "db:push": "bun run --parallel db:main:push db:org:push",
+    "db:studio": "drizzle-kit studio",
+    "db:update": "bun run --sequential db:generate db:migrate",
+    "db:main:generate": "drizzle-kit generate --config=drizzle-main.config.ts",
+    "db:org:generate": "drizzle-kit generate --config=drizzle-org.config.ts",
+    "db:generate": "bun run --parallel db:main:generate db:org:generate",
+    "db:migrate": "bun drizzle-migrate.ts --config=drizzle-main.config.ts,drizzle-org.config.ts"
+  },
+  "dependencies": {
+    "@entwine/utility": "workspace:*",
+    "@hono/arktype-validator": "^2.0.1",
+    "arktype": "catalog:",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "drizzle-orm": "beta",
+    "hono": "catalog:",
+    "hono-openapi": "^1.2.0"
+  },
+  "devDependencies": {
+    "@better-auth/cli": "^1.4.18",
+    "@entwine/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "@typescript/native-preview": "catalog:",
+    "drizzle-kit": "beta",
+    "tsdown": "^0.20.1",
+    "typescript": "catalog:"
+  }
 }

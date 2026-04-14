@@ -16,9 +16,9 @@ import { Route as OrgSlugIndexRouteImport } from './routes/$orgSlug/index'
 import { Route as authSignupRouteImport } from './routes/(auth)/signup'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as authAuthRouteImport } from './routes/(auth)/_auth'
-import { Route as OrgSlugIssuesRouteImport } from './routes/$orgSlug/issues'
 import { Route as authAuthJoinRouteImport } from './routes/(auth)/_auth.join'
 import { Route as authAuthAddAccountRouteImport } from './routes/(auth)/_auth.add-account'
+import { Route as OrgSlugTeamTeamSlugViewRouteImport } from './routes/$orgSlug/team/$teamSlug/$view'
 
 const TestRoute = TestRouteImport.update({
   id: '/test',
@@ -54,11 +54,6 @@ const authAuthRoute = authAuthRouteImport.update({
   id: '/(auth)/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrgSlugIssuesRoute = OrgSlugIssuesRouteImport.update({
-  id: '/issues',
-  path: '/issues',
-  getParentRoute: () => OrgSlugLayoutRoute,
-} as any)
 const authAuthJoinRoute = authAuthJoinRouteImport.update({
   id: '/join',
   path: '/join',
@@ -69,40 +64,45 @@ const authAuthAddAccountRoute = authAuthAddAccountRouteImport.update({
   path: '/add-account',
   getParentRoute: () => authAuthRoute,
 } as any)
+const OrgSlugTeamTeamSlugViewRoute = OrgSlugTeamTeamSlugViewRouteImport.update({
+  id: '/team/$teamSlug/$view',
+  path: '/team/$teamSlug/$view',
+  getParentRoute: () => OrgSlugLayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$orgSlug': typeof OrgSlugLayoutRouteWithChildren
   '/test': typeof TestRoute
-  '/$orgSlug/issues': typeof OrgSlugIssuesRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/$orgSlug/': typeof OrgSlugIndexRoute
   '/add-account': typeof authAuthAddAccountRoute
   '/join': typeof authAuthJoinRoute
+  '/$orgSlug/team/$teamSlug/$view': typeof OrgSlugTeamTeamSlugViewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/test': typeof TestRoute
-  '/$orgSlug/issues': typeof OrgSlugIssuesRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/$orgSlug': typeof OrgSlugIndexRoute
   '/add-account': typeof authAuthAddAccountRoute
   '/join': typeof authAuthJoinRoute
+  '/$orgSlug/team/$teamSlug/$view': typeof OrgSlugTeamTeamSlugViewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$orgSlug': typeof OrgSlugLayoutRouteWithChildren
   '/test': typeof TestRoute
-  '/$orgSlug/issues': typeof OrgSlugIssuesRoute
   '/(auth)/_auth': typeof authAuthRouteWithChildren
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
   '/$orgSlug/': typeof OrgSlugIndexRoute
   '/(auth)/_auth/add-account': typeof authAuthAddAccountRoute
   '/(auth)/_auth/join': typeof authAuthJoinRoute
+  '/$orgSlug/team/$teamSlug/$view': typeof OrgSlugTeamTeamSlugViewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,34 +110,34 @@ export interface FileRouteTypes {
     | '/'
     | '/$orgSlug'
     | '/test'
-    | '/$orgSlug/issues'
     | '/login'
     | '/signup'
     | '/$orgSlug/'
     | '/add-account'
     | '/join'
+    | '/$orgSlug/team/$teamSlug/$view'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/test'
-    | '/$orgSlug/issues'
     | '/login'
     | '/signup'
     | '/$orgSlug'
     | '/add-account'
     | '/join'
+    | '/$orgSlug/team/$teamSlug/$view'
   id:
     | '__root__'
     | '/'
     | '/$orgSlug'
     | '/test'
-    | '/$orgSlug/issues'
     | '/(auth)/_auth'
     | '/(auth)/login'
     | '/(auth)/signup'
     | '/$orgSlug/'
     | '/(auth)/_auth/add-account'
     | '/(auth)/_auth/join'
+    | '/$orgSlug/team/$teamSlug/$view'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -200,13 +200,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$orgSlug/issues': {
-      id: '/$orgSlug/issues'
-      path: '/issues'
-      fullPath: '/$orgSlug/issues'
-      preLoaderRoute: typeof OrgSlugIssuesRouteImport
-      parentRoute: typeof OrgSlugLayoutRoute
-    }
     '/(auth)/_auth/join': {
       id: '/(auth)/_auth/join'
       path: '/join'
@@ -221,17 +214,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authAuthAddAccountRouteImport
       parentRoute: typeof authAuthRoute
     }
+    '/$orgSlug/team/$teamSlug/$view': {
+      id: '/$orgSlug/team/$teamSlug/$view'
+      path: '/team/$teamSlug/$view'
+      fullPath: '/$orgSlug/team/$teamSlug/$view'
+      preLoaderRoute: typeof OrgSlugTeamTeamSlugViewRouteImport
+      parentRoute: typeof OrgSlugLayoutRoute
+    }
   }
 }
 
 interface OrgSlugLayoutRouteChildren {
-  OrgSlugIssuesRoute: typeof OrgSlugIssuesRoute
   OrgSlugIndexRoute: typeof OrgSlugIndexRoute
+  OrgSlugTeamTeamSlugViewRoute: typeof OrgSlugTeamTeamSlugViewRoute
 }
 
 const OrgSlugLayoutRouteChildren: OrgSlugLayoutRouteChildren = {
-  OrgSlugIssuesRoute: OrgSlugIssuesRoute,
   OrgSlugIndexRoute: OrgSlugIndexRoute,
+  OrgSlugTeamTeamSlugViewRoute: OrgSlugTeamTeamSlugViewRoute,
 }
 
 const OrgSlugLayoutRouteWithChildren = OrgSlugLayoutRoute._addFileChildren(
