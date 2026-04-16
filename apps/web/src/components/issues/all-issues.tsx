@@ -24,7 +24,12 @@ export default function AllIssues() {
 	const isFiltering = hasActiveFilters();
 
 	return (
-		<div className={cn("h-full w-full", isViewTypeGrid && "overflow-x-auto")}>
+		<div
+			className={cn("min-h-0 w-full flex-1", {
+				"overflow-x-auto": isViewTypeGrid,
+				"overflow-y-auto": !isViewTypeGrid,
+			})}
+		>
 			{isSearching ? (
 				<SearchIssuesView />
 			) : isFiltering ? (

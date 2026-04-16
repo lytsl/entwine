@@ -32,10 +32,9 @@ function RouteComponent() {
 	return (
 		<SidebarProvider>
 			<AppSidebar />
-			<SidebarInset>
-				<div className="flex flex-1 flex-col bg-sidebar md:min-h-min">
-					<div className="m-2 ms-0 flex-1 overflow-hidden rounded-md border border-[oklch(0.2655_0.0094_269.8)] bg-background shadow-subtle">
-						{/*<header className=" ">
+			<SidebarInset className="h-full bg-sidebar p-2 ps-0">
+				<div className="flex h-full flex-col overflow-hidden rounded-md border border-[oklch(0.2655_0.0094_269.8)] bg-background shadow-subtle">
+					{/*<header className=" ">
 							<div className="flex min-h-10 items-center gap-2 border-b border-b-[oklch(0.2655_0.0094_269.8)] px-4 ps-8 pe-6">
 								<SidebarTrigger className="-ml-1" />
 								<Separator
@@ -59,8 +58,7 @@ function RouteComponent() {
 							<div className="min-h-10 border-b border-b-[oklch(0.2655_0.0094_269.8)] ps-8 pe-6" />
 						</header>*/}
 
-						<Outlet />
-					</div>
+					<Outlet />
 				</div>
 			</SidebarInset>
 		</SidebarProvider>

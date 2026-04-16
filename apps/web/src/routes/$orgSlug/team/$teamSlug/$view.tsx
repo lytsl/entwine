@@ -9,8 +9,10 @@ export const Route = createFileRoute("/$orgSlug/team/$teamSlug/$view")({
 
 function RouteComponent() {
 	return (
-		<MainLayout header={<Header />}>
+		<>
+			<Header />
+
 			<AllIssues />
-		</MainLayout>
+		</>
 	);
 }
