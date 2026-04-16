@@ -1,6 +1,7 @@
-// import type { AuthType } from "@entwine/server";
+import type { AuthType } from "@entwine/server";
 import {
 	adminClient,
+	inferAdditionalFields,
 	multiSessionClient,
 	organizationClient,
 } from "better-auth/client/plugins";
@@ -16,7 +17,7 @@ export const authClient = createAuthClient({
 	baseURL: env.VITE_SERVER_URL,
 	// basePath: "/api/auth",
 	plugins: [
-		// inferAdditionalFields<AuthType>(),
+		inferAdditionalFields<AuthType>(),
 		adminClient(),
 		organizationClient({ teams: { enabled: true } }),
 		multiSessionClient(),

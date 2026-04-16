@@ -1,11 +1,9 @@
+import type { NonNullableFields } from "@entwine/utility/types";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { type } from "arktype";
-import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import type { BunWebSocketData } from "hono/bun";
 import { createMiddleware } from "hono/factory";
-import { dbManager } from "@/db/db-manager";
-import type mainSchema from "@/db/schema-main";
 import type { auth } from "./better-auth";
 
 export const authGuard = createMiddleware(async (c, next) => {
@@ -23,9 +21,7 @@ const orgHeaderSchema = type({
 
 export function createOrgApp() {
 	return new Hono<{
-		Variables: typeof auth.$Infer.Session & {
-			organization: typeof mainSchema.organization.$inferSelect;
-		};
+		Variables: NonNullableFields<typeof auth.$Infer.Session>;
 		Bindings: {
 			server: Bun.Server<BunWebSocketData>;
 		};

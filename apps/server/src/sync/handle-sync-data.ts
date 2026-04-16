@@ -1,18 +1,16 @@
+import type { NonNullableFields } from "@entwine/utility/types";
 import { and, eq, inArray, max } from "drizzle-orm";
 import type { Context } from "hono";
 import type { BunWebSocketData } from "hono/bun";
 import type { auth } from "@/auth/better-auth";
 import { dbManager } from "@/db/db-manager";
-import type mainSchema from "@/db/schema-main";
 import orgSchema from "@/db/schema-org";
 
 export async function handleSyncData<Model extends { id: string }>(
 	modelName: string,
 	modelDbData: Model[],
 	c: Context<{
-		Variables: typeof auth.$Infer.Session & {
-			organization: typeof mainSchema.organization.$inferSelect;
-		};
+		Variables: NonNullableFields<typeof auth.$Infer.Session>;
 		Bindings: {
 			server: Bun.Server<BunWebSocketData>;
 		};

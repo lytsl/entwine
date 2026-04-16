@@ -1,9 +1,6 @@
-import type { ExpandRecursively } from "@entwine/utility/types";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { type } from "arktype";
-import { and, eq, gt, inArray, max } from "drizzle-orm";
-import { QueryBuilder } from "drizzle-orm/sqlite-core";
-import { createAuthApp } from "@/auth/auth.factory";
+import { and, eq, gt, inArray } from "drizzle-orm";
 import { createOrgApp } from "@/auth/org-auth.factory";
 import { dbManager } from "@/db/db-manager";
 import orgSchema from "@/db/schema-org";

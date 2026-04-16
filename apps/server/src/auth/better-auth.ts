@@ -10,11 +10,10 @@ import {
 	multiSession,
 	organization,
 } from "better-auth/plugins";
-import { and, eq, like, sql } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { dbManager } from "@/db/db-manager";
 import mainSchema from "@/db/schema-main";
 import authSchema from "@/db/schema-main/auth";
-import orgSchema from "@/db/schema-org";
 import { env } from "../../env";
 
 const db = dbManager.db;
@@ -186,6 +185,5 @@ export const auth = betterAuth({
 	],
 });
 
-export type BetterAuthSession = typeof auth.$Infer.Session & {
-	organization: typeof mainSchema.organization.$inferSelect;
-};
+export type BetterAuthSession = typeof auth.$Infer.Session;
+export type AuthType = typeof auth;

@@ -1,11 +1,11 @@
 import { arktypeValidator } from "@hono/arktype-validator";
 import { type } from "arktype";
 import { and, eq, gt, inArray } from "drizzle-orm";
-import { createAuthApp } from "@/auth/auth.factory";
+import { createOrgApp } from "@/auth/org-auth.factory";
 import { dbManager } from "@/db/db-manager";
 import orgSchema from "@/db/schema-org";
 
-const app = createAuthApp().get(
+const app = createOrgApp().get(
 	"/",
 	arktypeValidator("query", type({ lastSyncId: "string.integer.parse" })),
 	async (c) => {

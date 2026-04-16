@@ -3,7 +3,7 @@ import { type ExecutionContext, Hono } from "hono";
 import { type BunWebSocketData, websocket } from "hono/bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { auth } from "@/auth/better-auth";
+import { type AuthType, auth } from "@/auth/better-auth";
 import origanizationRouter from "@/routes/auth/organization";
 import deltaRouter from "@/routes/delta";
 import issueSyncRouter from "@/routes/sync/issue";
@@ -61,4 +61,4 @@ const server: Server<BunWebSocketData> = Bun.serve({
 	websocket,
 });
 
-export type Auth = typeof auth;
+export type { AuthType };

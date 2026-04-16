@@ -14,7 +14,6 @@
 		"@atlaskit/pragmatic-drag-and-drop": "^1.7.9",
 		"@base-ui/react": "^1.1.0",
 		"@entwine/hono-react-query": "workspace:*",
-		"@entwine/server": "workspace:*",
 		"@entwine/utility": "workspace:*",
 		"@fontsource-variable/inter": "^5.2.8",
 		"@kayron013/lexorank": "^2.0.0",
@@ -54,6 +53,7 @@
 	},
 	"devDependencies": {
 		"@entwine/config": "workspace:*",
+		"@entwine/server": "workspace:*",
 		"@tanstack/react-query-devtools": "^5.91.3",
 		"@tanstack/react-router-devtools": "^1.157.18",
 		"@tanstack/router-plugin": "^1.157.18",

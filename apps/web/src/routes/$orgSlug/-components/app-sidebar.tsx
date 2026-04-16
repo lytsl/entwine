@@ -1,6 +1,5 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	BoxIcon,
 	FocusIcon,
@@ -19,7 +18,6 @@ import {
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { authClient } from "@/lib/auth-client";
 import {
 	type ShortcutRegistryItem,
 	shortcutRegistry,
