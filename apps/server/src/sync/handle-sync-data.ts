@@ -1,14 +1,34 @@
 import type { NonNullableFields } from "@entwine/utility/types";
-import { and, eq, inArray, max } from "drizzle-orm";
+import { type } from "arktype";
+import { and, eq, inArray, max, or } from "drizzle-orm";
 import type { Context } from "hono";
 import type { BunWebSocketData } from "hono/bun";
 import type { auth } from "@/auth/better-auth";
 import { dbManager } from "@/db/db-manager";
-import { orgSchema } from "@/db/schema-org";
+import { orgSchema, orgSyncModels } from "@/db/schema-org";
 
-export async function handleSyncData<Model extends { id: string }>(
-	modelName: string,
-	modelDbData: Model[],
+export const CudValidationSchema = type({
+	modelId: "string",
+	modelName: type.enumerated(...orgSyncModels),
+	data: "unknown",
+	action: "'insert' | 'update' | 'delete'",
+})
+	.array()
+	.atLeastLength(1);
+
+type TCudPayload = typeof CudValidationSchema.inferOut;
+type TItemPayload = TCudPayload[number];
+type TGroupKeys = `${TItemPayload["action"]}-${TItemPayload["modelName"]}`;
+
+export type CudTypes = {
+	Payload: TCudPayload;
+	GroupKeys: TGroupKeys;
+	GroupedPayload: Record<TGroupKeys, TItemPayload[]>;
+};
+
+export async function handleSyncData(
+	payload: CudTypes["Payload"],
+	modelDbData: { id: string }[],
 	c: Context<{
 		Variables: NonNullableFields<typeof auth.$Infer.Session>;
 		Bindings: {
@@ -17,25 +37,34 @@ export async function handleSyncData<Model extends { id: string }>(
 	}>,
 ) {
 	const db = await dbManager.getOrgDb(c.get("organization").id);
+	const groupedPayloadIds = {} as Record<
+		TItemPayload["modelName"],
+		Set<string>
+	>;
+	for (const payloadItem of payload) {
+		groupedPayloadIds[payloadItem.modelName] ??= new Set();
+		groupedPayloadIds[payloadItem.modelName].add(payloadItem.modelId);
+	}
 
 	const syncDbData = db
 		.select({
-			modelName: orgSchema.sync.modelName,
-			modelId: orgSchema.sync.modelId,
-			id: max(orgSchema.sync.id),
-			action: orgSchema.sync.action,
+			modelName: orgSchema.Sync.modelName,
+			modelId: orgSchema.Sync.modelId,
+			id: max(orgSchema.Sync.id),
+			action: orgSchema.Sync.action,
 		})
-		.from(orgSchema.sync)
+		.from(orgSchema.Sync)
 		.where(
-			and(
-				eq(orgSchema.sync.modelName, modelName),
-				inArray(
-					orgSchema.sync.modelId,
-					modelDbData.map((item) => item.id),
+			or(
+				...Object.entries(groupedPayloadIds).map(([modelName, idSet]) =>
+					and(
+						eq(orgSchema.Sync.modelName, modelName),
+						inArray(orgSchema.Sync.modelId, Array.from(idSet.keys())),
+					),
 				),
 			),
 		)
-		.groupBy(orgSchema.sync.modelName, orgSchema.sync.modelId)
+		.groupBy(orgSchema.Sync.modelName, orgSchema.Sync.modelId)
 		.all();
 
 	const syncData = syncDbData.map((syncItem) => ({

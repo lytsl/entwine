@@ -4,185 +4,127 @@ import { and, eq, gt, inArray } from "drizzle-orm";
 import { createOrgApp } from "@/auth/org-auth.factory";
 import { dbManager } from "@/db/db-manager";
 import { orgModelConfig, orgSchema, orgSyncModels } from "@/db/schema-org";
-import { handleSyncData } from "@/sync/handle-sync-data";
+import {
+	type CudTypes,
+	CudValidationSchema,
+	handleSyncData,
+} from "@/sync/handle-sync-data";
 import { parseTanstackOptions } from "@/sync/tanstack-db/drizzle-adapter";
 import { ParsedLoadSubsetOptions } from "@/sync/tanstack-db/types";
 
 const app = createOrgApp()
-	.post(
-		"/cud",
-		arktypeValidator(
-			"json",
-			type({
-				modelId: "string",
-				modelName: type.enumerated(...orgSyncModels),
-				data: "unknown",
-				action: "'insert' | 'update' | 'delete'",
-			})
-				.array()
-				.atLeastLength(1),
-		),
-		async (c) => {
-			const db = await dbManager.getOrgDb(c.get("organization").id);
-			const payload = c.req.valid("json");
+	.post("/cud", arktypeValidator("json", CudValidationSchema), async (c) => {
+		const db = await dbManager.getOrgDb(c.get("organization").id);
+		const payload = c.req.valid("json");
 
-			type TItemPayload = (typeof payload)[number];
-			type TGroupKeys =
-				`${TItemPayload["action"]}-${TItemPayload["modelName"]}`;
-			const groupedPayload = {} as Record<TGroupKeys, TItemPayload[]>;
+		const groupedPayload = {} as CudTypes["GroupedPayload"];
 
-			for (const itemPayload of payload) {
-				const groupKey =
-					`${itemPayload.action}-${itemPayload.modelName}` as const;
+		for (const itemPayload of payload) {
+			const groupKey =
+				`${itemPayload.action}-${itemPayload.modelName}` as const;
 
-				if (itemPayload.action === "delete") {
-					groupedPayload[groupKey] ??= [];
-					groupedPayload[groupKey].push(itemPayload);
-					continue;
-				}
-
-				const schema =
-					orgModelConfig[itemPayload.modelName].schema[itemPayload.action];
-				const data = schema(itemPayload.data);
-
-				if (data instanceof type.errors) {
-					console.error(data.summary);
-					throw data;
-				}
+			if (itemPayload.action === "delete") {
 				groupedPayload[groupKey] ??= [];
-				groupedPayload[groupKey].push({ ...itemPayload, data });
+				groupedPayload[groupKey].push(itemPayload);
+				continue;
 			}
 
-			const groupedKeys = Object.keys(groupedPayload) as TGroupKeys[];
-			let modelDbData: unknown[];
-			if (
-				groupedKeys.length === 1 &&
-				(groupedKeys[0]!.startsWith("update")
-					? groupedKeys[0]!.length === 1
-					: true)
-			) {
-				const groupKey = groupedKeys[0]!;
-				// const [action, modelName] = groupKey.split(/-(.*s?)/) as [
-				//   TItemPayload["action"],
-				//   TItemPayload["modelName"],
-				// ];
-				const payloadArray = groupedPayload[groupKey]!;
-				const payloadItem = payloadArray[0]!;
-				const action = payloadItem.action;
-				const modelName = payloadItem.modelName;
+			const schema =
+				orgModelConfig[itemPayload.modelName].schema[itemPayload.action];
+			const data = schema(itemPayload.data);
 
-				if (action === "insert") {
-					modelDbData = db
-						.insert(orgSchema[modelName])
-						.values(payloadArray.map((p) => p.data as any))
-						.returning()
-						.all();
-				} else if (action === "update") {
-					modelDbData = payloadArray.flatMap((payloadItem) =>
-						db
-							.update(orgSchema[modelName])
-							.set(payloadItem.data as any)
-							.where(eq(orgSchema[modelName].id, payloadItem.modelId))
-							.returning()
-							.all(),
-					);
-				} else if (action === "delete") {
-					db.delete(orgSchema[modelName])
-						.where(
-							inArray(
-								orgSchema[modelName].id,
-								payloadArray.map((i) => i.modelId),
-							),
-						)
-						.run();
-				}
-			} else {
-				modelDbData = db.transaction((tx) =>
-					Object.values(groupedPayload).flatMap((payloadArray) => {
-						const payloadItem = payloadArray[0]!;
-						const action = payloadItem.action;
-						const modelName = payloadItem.modelName;
-
-						if (action === "insert") {
-							return tx
-								.insert(orgSchema[modelName])
-								.values(payloadArray.map((p) => p.data as any))
-								.returning()
-								.all();
-						}
-						if (action === "update") {
-							return payloadArray.flatMap((payloadItem) =>
-								tx
-									.update(orgSchema[modelName])
-									.set(payloadItem.data as any)
-									.where(eq(orgSchema[modelName].id, payloadItem.modelId))
-									.returning()
-									.all(),
-							);
-						}
-						if (action === "delete") {
-							tx.delete(orgSchema[modelName])
-								.where(
-									inArray(
-										orgSchema[modelName].id,
-										payloadArray.map((i) => i.modelId),
-									),
-								)
-								.run();
-							return [];
-						}
-					}),
-				);
+			if (data instanceof type.errors) {
+				console.error(data.summary);
+				throw data;
 			}
+			groupedPayload[groupKey] ??= [];
+			groupedPayload[groupKey].push({ ...itemPayload, data });
+		}
 
-			return handleSyncData("issue", modelDbData, c);
-		},
-	)
-	.post("/", arktypeValidator("json", issueSchema.create), async (c) => {
-		const db = await dbManager.getOrgDb(c.get("organization").id);
-		const payload = c.req.valid("json").map((item) => item.data);
+		const groupedKeys = Object.keys(groupedPayload) as CudTypes["GroupKeys"][];
+		let modelDbData: { id: string }[];
+		if (
+			groupedKeys.length === 1 &&
+			(groupedKeys[0]!.startsWith("update")
+				? groupedKeys[0]!.length === 1
+				: true)
+		) {
+			const groupKey = groupedKeys[0]!;
+			const payloadArray = groupedPayload[groupKey]!;
+			const payloadItem = payloadArray[0]!;
+			const action = payloadItem.action;
+			const modelName = payloadItem.modelName;
 
-		const modelDbData = db
-			.insert(orgSchema.issue)
-			.values(payload)
-			.returning()
-			.all();
-
-		return handleSyncData("issue", modelDbData, c);
-	})
-	.patch("/", arktypeValidator("json", issueSchema.update), async (c) => {
-		const db = await dbManager.getOrgDb(c.get("organization").id);
-		const payload = c.req.valid("json");
-
-		const modelDbData = db.transaction((tx) => {
-			return payload.flatMap(({ id, data }) =>
-				tx
-					.update(orgSchema.issue)
-					.set(data)
-					.where(eq(orgSchema.issue.id, id))
+			if (action === "insert") {
+				modelDbData = db
+					.insert(orgSchema[modelName])
+					.values(payloadArray.map((p) => p.data as any))
 					.returning()
-					.all(),
+					.all();
+			} else if (action === "update") {
+				modelDbData = payloadArray.flatMap((payloadItem) =>
+					db
+						.update(orgSchema[modelName])
+						.set(payloadItem.data as any)
+						.where(eq(orgSchema[modelName].id, payloadItem.modelId))
+						.returning()
+						.all(),
+				);
+			} else if (action === "delete") {
+				db.delete(orgSchema[modelName])
+					.where(
+						inArray(
+							orgSchema[modelName].id,
+							payloadArray.map((i) => i.modelId),
+						),
+					)
+					.run();
+				modelDbData = [];
+			} else {
+				throw new Error(`Invalid action: ${action}`);
+			}
+		} else {
+			modelDbData = db.transaction((tx) =>
+				Object.values(groupedPayload).flatMap((payloadArray) => {
+					const payloadItem = payloadArray[0]!;
+					const action = payloadItem.action;
+					const modelName = payloadItem.modelName;
+
+					if (action === "insert") {
+						return tx
+							.insert(orgSchema[modelName])
+							.values(payloadArray.map((p) => p.data as any))
+							.returning()
+							.all();
+					}
+					if (action === "update") {
+						return payloadArray.flatMap((payloadItem) =>
+							tx
+								.update(orgSchema[modelName])
+								.set(payloadItem.data as any)
+								.where(eq(orgSchema[modelName].id, payloadItem.modelId))
+								.returning()
+								.all(),
+						);
+					}
+					if (action === "delete") {
+						tx.delete(orgSchema[modelName])
+							.where(
+								inArray(
+									orgSchema[modelName].id,
+									payloadArray.map((i) => i.modelId),
+								),
+							)
+							.run();
+						return [];
+					}
+					throw new Error(`Invalid action: ${action}`);
+				}),
 			);
-		});
+		}
 
-		return handleSyncData("issue", modelDbData, c);
+		return await handleSyncData(payload, modelDbData, c);
 	})
-	.delete("/", arktypeValidator("json", issueSchema.delete), async (c) => {
-		const db = await dbManager.getOrgDb(c.get("organization").id);
-		const payload = c.req.valid("json");
-
-		db.delete(orgSchema.issue)
-			.where(
-				inArray(
-					orgSchema.issue.id,
-					payload.map((i) => i.id),
-				),
-			)
-			.run();
-
-		return handleSyncData("issue", [], c);
-	})
-
 	.get(
 		"/delta",
 		arktypeValidator("query", type({ lastSyncId: "string.integer.parse" })),
@@ -192,11 +134,11 @@ const app = createOrgApp()
 
 			const dbSyncData = await db
 				.select()
-				.from(orgSchema.sync)
+				.from(orgSchema.Sync)
 				.where(
 					and(
-						eq(orgSchema.sync.modelName, "issue"),
-						gt(orgSchema.sync.id, lastSyncId),
+						eq(orgSchema.Sync.modelName, "issue"),
+						gt(orgSchema.Sync.id, lastSyncId),
 					),
 				);
 

@@ -6,7 +6,7 @@ import {
 	createSelectSchema,
 	createUpdateSchema,
 } from "../drizzle-arktype";
-import { defineModelConfig } from "../utils/model-config";
+import { defineModelConfig } from "../utils/define-model-config";
 
 const table = sqliteTable("issue", {
 	id: text("id").primaryKey().notNull(),

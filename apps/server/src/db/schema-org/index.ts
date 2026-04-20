@@ -29,3 +29,4 @@ for (const [key, value] of Object.entries(org)) {
 }
 
 export const orgSyncModels = ["Issue"] satisfies (keyof TOrgModelConfig)[];
+export type TOrgSyncModel = (typeof orgSyncModels)[number];
