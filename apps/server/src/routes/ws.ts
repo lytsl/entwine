@@ -1,11 +1,15 @@
-import type { ServerWebSocket } from "bun";
+import type { Server, ServerWebSocket } from "bun";
 import { Hono } from "hono";
-import { upgradeWebSocket } from "hono/bun";
-import type { THonoBaseEnv } from "./types";
+import { upgradeWebSocket, type BunWebSocketData } from "hono/bun";
+import type { Nullable } from "@entwine/utility/types";
+import type { BetterAuthSession } from "@/auth/better-auth";
 
 // const orgWsClientMap = new Map<string, Set<WSContext<any>>>();
 
-const app = new Hono<THonoBaseEnv>().get(
+const app = new Hono<{
+	Variables: Nullable<BetterAuthSession>;
+	Bindings: { server: Server<BunWebSocketData> };
+}>().get(
 	"/",
 	upgradeWebSocket((_c) => {
 		return {

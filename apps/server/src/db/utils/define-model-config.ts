@@ -7,6 +7,7 @@ import {
 	createSelectSchema,
 	createUpdateSchema,
 } from "../drizzle-arktype";
+import type { Type } from "arktype";
 
 type Session = NonNullableFields<typeof auth.$Infer.Session>;
 
@@ -56,11 +57,21 @@ export interface ModelOptions<T extends SQLiteTable> {
 	hooks?: ModelHooks<T>;
 }
 
-// Single factory function
+export interface ModelConfigReturn<TTable extends SQLiteTable> {
+	table: TTable;
+	schema: {
+		insert: Type;
+		update: Type;
+		select: Type;
+	};
+	filters?: ModelOptions<TTable>["filters"];
+	hooks?: ModelOptions<TTable>["hooks"];
+}
+
 export function defineModelConfig<TTable extends SQLiteTable>(
 	table: TTable,
 	options?: ModelOptions<TTable>,
-) {
+): ModelConfigReturn<TTable> {
 	return {
 		table,
 		schema: {

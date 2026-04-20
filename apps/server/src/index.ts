@@ -3,15 +3,21 @@ import { type ExecutionContext, Hono } from "hono";
 import { type BunWebSocketData, websocket } from "hono/bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { type AuthType, auth } from "@/auth/better-auth";
+import {
+	type AuthType,
+	type BetterAuthSession,
+	auth,
+} from "@/auth/better-auth";
 import origanizationRouter from "@/routes/auth/organization";
-import deltaRouter from "@/routes/delta";
-import issueSyncRouter from "@/routes/sync/issue";
+import syncRouter from "@/routes/sync";
 import wsRouter from "@/routes/ws";
 import { env } from "../env";
-import type { THonoBaseEnv } from "./routes/types";
+import type { Nullable } from "@entwine/utility/types";
 
-const app = new Hono<THonoBaseEnv>()
+const app = new Hono<{
+	Variables: Nullable<BetterAuthSession>;
+	Bindings: { server: Server<BunWebSocketData> };
+}>()
 	.use(logger())
 	.use(
 		"/*",
@@ -35,8 +41,7 @@ const app = new Hono<THonoBaseEnv>()
 		return c.json("OK");
 	})
 	.route("/ws", wsRouter)
-	.route("/delta", deltaRouter)
-	.route("/sync/issue", issueSyncRouter)
+	.route("/sync", syncRouter)
 	.route("/auth/organization", origanizationRouter)
 	.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
