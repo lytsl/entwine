@@ -1,11 +1,6 @@
 import { type } from "arktype";
 import { sql } from "drizzle-orm";
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import {
-	createInsertSchema,
-	createSelectSchema,
-	createUpdateSchema,
-} from "../drizzle-arktype";
 import { defineModelConfig } from "../utils/define-model-config";
 
 const table = sqliteTable("issue", {

@@ -1,5 +1,4 @@
 import type { NonNullableFields } from "@entwine/utility/types";
-import { type as arktype, type Type } from "arktype";
 import type { InferInsertModel, SQL } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import type { auth } from "@/auth/better-auth";

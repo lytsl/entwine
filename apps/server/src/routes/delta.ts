@@ -1,10 +1,9 @@
 import { arktypeValidator } from "@hono/arktype-validator";
 import { type } from "arktype";
 import { and, eq, gt, inArray } from "drizzle-orm";
-import { unionAll } from "drizzle-orm/sqlite-core";
 import { createOrgApp } from "@/auth/org-auth.factory";
 import { dbManager } from "@/db/db-manager";
-import { orgSchema, orgSyncModels, type TOrgSyncModel } from "@/db/schema-org";
+import { orgSchema, type TOrgSyncModel } from "@/db/schema-org";
 
 const app = createOrgApp().get(
 	"/",
