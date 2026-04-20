@@ -1,42 +1,32 @@
 import { type } from "arktype";
-import { sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "../drizzle-arktype";
+import { defineModelConfig } from "../utils/model-config";
 
-export const issue = sqliteTable("issue", {
-	// ...getDefaultColumns(),
-	id: text("id")
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID())
-		.notNull(),
-	// identifier: text().notNull(),
-	title: text().notNull(),
-	description: text().notNull(),
-	// status: Status,
-	// assignee: text("assignee").references(() => user.id, {
-	// 	onDelete: "set null",
-	// }),
-	// priority: Priority,
-	// labels: LabelInterface[],
-	// cycleId: string,
-	// project?: Project,
-	// subissues?: string[],
-	rank: text().notNull(),
-	// dueDate: integer("deleted_at", { mode: "timestamp_ms" }),
+const table = sqliteTable("issue", {
+	id: text("id").primaryKey().notNull(),
+	title: text()
+		.notNull()
+		.meta({ validationSchema: type("string.trim") }),
+	description: text()
+		.notNull()
+		.meta({ validationSchema: type("string.trim") }),
+	createdAt: integer("created_at", { mode: "timestamp_ms" })
+		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		.notNull()
+		.meta({ readOnly: true }),
+	updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+		.default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+		.$onUpdate(() => new Date())
+		.notNull()
+		.meta({ readOnly: true }),
 });
 
-export default { issue };
+const config = defineModelConfig(table);
 
-export const issueSchema = {
-	create: type({ data: createInsertSchema(issue) })
-		.array()
-		.atLeastLength(1),
-	update: type({ id: "string", data: createUpdateSchema(issue) })
-		.array()
-		.atLeastLength(1),
-	select: createSelectSchema(issue),
-	delete: type({ id: "string" }).array().atLeastLength(1),
-};
+export default { Issue: { table, config } };

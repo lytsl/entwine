@@ -4,7 +4,7 @@ import type { Context } from "hono";
 import type { BunWebSocketData } from "hono/bun";
 import type { auth } from "@/auth/better-auth";
 import { dbManager } from "@/db/db-manager";
-import orgSchema from "@/db/schema-org";
+import { orgSchema } from "@/db/schema-org";
 
 export async function handleSyncData<Model extends { id: string }>(
 	modelName: string,

@@ -7,7 +7,7 @@ import { appRoot } from "@/utils/app-root";
 import { env } from "../../env";
 import mainSchema from "./schema-main";
 import mainRelations from "./schema-main/relations";
-import orgSchema from "./schema-org";
+import { orgSchema } from "./schema-org";
 import { createDrizzleExtension } from "./utils/sync-extension";
 
 class DatabaseManager {

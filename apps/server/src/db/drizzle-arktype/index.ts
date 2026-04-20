@@ -47,7 +47,7 @@ function handleColumns(
 		}
 
 		// const refinement = refinements[key];
-		const refinement = selected?.config?.arktype;
+		const refinement = selected?.config?.meta?.validationSchema;
 		if (
 			refinement !== undefined &&
 			(typeof refinement !== "function" ||

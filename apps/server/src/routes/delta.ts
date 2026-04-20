@@ -3,7 +3,7 @@ import { type } from "arktype";
 import { and, eq, gt, inArray } from "drizzle-orm";
 import { createOrgApp } from "@/auth/org-auth.factory";
 import { dbManager } from "@/db/db-manager";
-import orgSchema from "@/db/schema-org";
+import { orgSchema } from "@/db/schema-org";
 
 const app = createOrgApp().get(
 	"/",

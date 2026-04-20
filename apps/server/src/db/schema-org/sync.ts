@@ -1,6 +1,6 @@
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export const sync = sqliteTable(
+export const table = sqliteTable(
 	"sync",
 	{
 		id: integer("id").primaryKey({ autoIncrement: false }).notNull(),
@@ -11,4 +11,4 @@ export const sync = sqliteTable(
 	(table) => [index("sync_model_idx").on(table.modelName, table.modelId)],
 );
 
-export default { sync };
+export default { Sync: { table } };

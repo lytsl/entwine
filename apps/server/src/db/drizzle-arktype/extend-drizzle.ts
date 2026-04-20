@@ -14,37 +14,28 @@ declare module "drizzle-orm/sqlite-core" {
 		TRuntimeConfig extends object = object,
 		TExtraConfig extends ColumnBuilderExtraConfig = object,
 	> {
-		meta(metadata: Record<string, any>): this;
-		arktype(schema: Type): this;
+		meta(
+			metadata: { readOnly: true } | { validationSchema: Type } | undefined,
+		): this;
 	}
 	interface SQLiteColumn<
 		T extends ColumnBaseConfig<ColumnType> = ColumnBaseConfig<ColumnType>,
 		TRuntimeConfig extends object = {},
 	> {
-		readonly meta: Record<string, any> | undefined;
-		readonly arktype: Type | undefined;
+		readonly meta: { readOnly: true } | { validationSchema: Type } | undefined;
 	}
 }
 
-SQLiteColumnBuilder.prototype.meta = function (metadata: Record<string, any>) {
+SQLiteColumnBuilder.prototype.meta = function (
+	metadata: { readOnly: true } | { validationSchema: Type } | undefined,
+) {
 	(this as any).config.meta = metadata;
-	return this;
-};
-SQLiteColumnBuilder.prototype.arktype = function (schema: Type) {
-	(this as any).config.arktype = schema;
 	return this;
 };
 
 Object.defineProperty(SQLiteColumn.prototype, "meta", {
 	get() {
 		return (this as any).config?.meta;
-	},
-	configurable: true,
-	enumerable: true,
-});
-Object.defineProperty(SQLiteColumn.prototype, "arktype", {
-	get() {
-		return (this as any).config?.arktype;
 	},
 	configurable: true,
 	enumerable: true,
