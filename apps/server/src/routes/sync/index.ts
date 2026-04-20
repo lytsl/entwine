@@ -1,6 +1,6 @@
 import { arktypeValidator } from "@hono/arktype-validator";
 import { type } from "arktype";
-import { and, eq, gt, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { createOrgApp } from "@/auth/org-auth.factory";
 import { dbManager } from "@/db/db-manager";
 import { orgModelConfig, orgSchema } from "@/db/schema-org";
@@ -9,11 +9,11 @@ import {
 	CudValidationSchema,
 	handleSyncData,
 } from "@/sync/handle-sync-data";
-import { parseTanstackOptions } from "@/sync/tanstack-db/drizzle-adapter";
-import { ParsedLoadSubsetOptions } from "@/sync/tanstack-db/types";
 
-const app = createOrgApp()
-	.post("/cud", arktypeValidator("json", CudValidationSchema), async (c) => {
+const app = createOrgApp().post(
+	"/cud",
+	arktypeValidator("json", CudValidationSchema),
+	async (c) => {
 		const db = await dbManager.getOrgDb(c.get("organization").id);
 		const payload = c.req.valid("json");
 
@@ -124,79 +124,7 @@ const app = createOrgApp()
 		}
 
 		return await handleSyncData(payload, modelDbData, c);
-	})
-	.get(
-		"/delta",
-		arktypeValidator("query", type({ lastSyncId: "string.integer.parse" })),
-		async (c) => {
-			const db = await dbManager.getOrgDb(c.get("organization").id);
-			const { lastSyncId } = c.req.valid("query");
-
-			const dbSyncData = await db
-				.select()
-				.from(orgSchema.Sync)
-				.where(
-					and(
-						eq(orgSchema.Sync.modelName, "issue"),
-						gt(orgSchema.Sync.id, lastSyncId),
-					),
-				);
-
-			const filteredSyncData: typeof dbSyncData = [];
-			dbSyncData.forEach((item) => {
-				const existingItemIndex = filteredSyncData.findIndex(
-					(existing) =>
-						existing.modelName === item.modelName &&
-						existing.modelId === item.modelId,
-				);
-				if (existingItemIndex >= 0) {
-					if (item.id > dbSyncData[existingItemIndex]!.id) {
-						filteredSyncData[existingItemIndex] = item;
-					}
-				} else {
-					filteredSyncData.push(item);
-				}
-			});
-
-			const issueData = await db
-				.select()
-				.from(orgSchema.issue)
-				.where(
-					inArray(
-						orgSchema.issue.id,
-						filteredSyncData.map((item) => item.modelId),
-					),
-				);
-
-			const data = filteredSyncData.map((syncItem) => ({
-				...syncItem,
-				data: issueData.find((item) => item.id === syncItem.modelId),
-			}));
-
-			return c.json(data, 200);
-		},
-	)
-	.get("/", arktypeValidator("query", ParsedLoadSubsetOptions), async (c) => {
-		const db = await dbManager.getOrgDb(c.get("organization").id);
-		const query = c.req.valid("query");
-		const parsedFilters = parseTanstackOptions(orgSchema.issue, query);
-
-		let dbQuery = db.select().from(orgSchema.issue).$dynamic();
-		if (parsedFilters.where.length) {
-			dbQuery = dbQuery.where(and(...parsedFilters.where));
-		}
-		if (parsedFilters.orderBy.length) {
-			dbQuery = dbQuery.orderBy(...parsedFilters.orderBy);
-		}
-		if (typeof parsedFilters.offset === "number") {
-			dbQuery = dbQuery.offset(parsedFilters.offset);
-		}
-		if (typeof parsedFilters.limit === "number") {
-			dbQuery = dbQuery.limit(parsedFilters.limit);
-		}
-
-		const data = await dbQuery;
-		return c.json(data, 200);
-	});
+	},
+);
 
 export default app;
