@@ -1,7 +1,7 @@
+import type { Nullable } from "@entwine/utility/types";
 import type { Server, ServerWebSocket } from "bun";
 import { Hono } from "hono";
-import { upgradeWebSocket, type BunWebSocketData } from "hono/bun";
-import type { Nullable } from "@entwine/utility/types";
+import { type BunWebSocketData, upgradeWebSocket } from "hono/bun";
 import type { BetterAuthSession } from "@/auth/better-auth";
 
 // const orgWsClientMap = new Map<string, Set<WSContext<any>>>();

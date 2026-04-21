@@ -1,4 +1,5 @@
 import type { NonNullableFields } from "@entwine/utility/types";
+import type { Type } from "arktype";
 import type { InferInsertModel, SQL } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import type { auth } from "@/auth/better-auth";
@@ -7,7 +8,6 @@ import {
 	createSelectSchema,
 	createUpdateSchema,
 } from "../drizzle-arktype";
-import type { Type } from "arktype";
 
 type Session = NonNullableFields<typeof auth.$Infer.Session>;
 

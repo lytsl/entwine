@@ -53,6 +53,7 @@ const app = createOrgApp()
 			const action = payloadItem.action;
 			const modelName = payloadItem.modelName;
 
+			// TODO: implement hooks
 			if (action === "insert") {
 				modelDbData = db
 					.insert(orgSchema[modelName])
@@ -60,6 +61,7 @@ const app = createOrgApp()
 					.returning()
 					.all();
 			} else if (action === "update") {
+				// TODO: group by payloadItem.data
 				modelDbData = payloadArray.flatMap((payloadItem) =>
 					db
 						.update(orgSchema[modelName])

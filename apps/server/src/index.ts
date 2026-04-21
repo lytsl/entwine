@@ -1,3 +1,4 @@
+import type { Nullable } from "@entwine/utility/types";
 import type { Server } from "bun";
 import { type ExecutionContext, Hono } from "hono";
 import { type BunWebSocketData, websocket } from "hono/bun";
@@ -5,14 +6,13 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import {
 	type AuthType,
-	type BetterAuthSession,
 	auth,
+	type BetterAuthSession,
 } from "@/auth/better-auth";
 import origanizationRouter from "@/routes/auth/organization";
 import syncRouter from "@/routes/sync";
 import wsRouter from "@/routes/ws";
 import { env } from "../env";
-import type { Nullable } from "@entwine/utility/types";
 
 const app = new Hono<{
 	Variables: Nullable<BetterAuthSession>;
