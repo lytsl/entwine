@@ -3,7 +3,11 @@ import { type } from "arktype";
 import { and, eq, gt, inArray } from "drizzle-orm";
 import { createOrgApp } from "@/auth/org-auth.factory";
 import { dbManager } from "@/db/db-manager";
-import { orgModelConfig, orgSchema, type TOrgSyncModel } from "@/db/schema-org";
+import {
+	orgModelConfigs,
+	orgSchema,
+	type TOrgSyncModel,
+} from "@/db/schema-org";
 import {
 	type CudTypes,
 	CudValidationSchema,
@@ -28,7 +32,7 @@ const app = createOrgApp()
 			}
 
 			const schema =
-				orgModelConfig[itemPayload.modelName].schema[itemPayload.action];
+				orgModelConfigs[itemPayload.modelName].schema[itemPayload.action];
 			const data = schema(itemPayload.data);
 
 			if (data instanceof type.errors) {

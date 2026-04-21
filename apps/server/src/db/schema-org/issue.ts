@@ -1,6 +1,13 @@
 import { type } from "arktype";
-import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { defineRelations, sql } from "drizzle-orm";
+import {
+	foreignKey,
+	index,
+	integer,
+	sqliteTable,
+	text,
+	unique,
+} from "drizzle-orm/sqlite-core";
 import { customJson } from "../utils/custom-drizzle-types";
 import { defineModelConfig } from "../utils/define-model-config";
 
@@ -12,7 +19,7 @@ export enum IssuePriority {
 	URGENT = 4,
 }
 
-const issueTable = sqliteTable(
+const Issue = sqliteTable(
 	"issue",
 	{
 		id: text("id").primaryKey().notNull(),
@@ -35,7 +42,7 @@ const issueTable = sqliteTable(
 		teamNumber: integer("team_number").notNull().meta({ readOnly: true }),
 		statusId: text("status_id")
 			.notNull()
-			.references(() => issueStatusTable.id, { onDelete: "restrict" }),
+			.references(() => IssueStatus.id, { onDelete: "restrict" }),
 		assigneeId: text("assignee_id").notNull(),
 		priority: integer()
 			.notNull()
@@ -43,21 +50,28 @@ const issueTable = sqliteTable(
 		labels: customJson<string[]>("labels").meta({
 			validationSchema: type("string[]"),
 		}),
-		projectId: text("project_id").references(() => projectTable.id, {
+		projectId: text("project_id").references(() => Project.id, {
 			onDelete: "set null",
 		}),
-		subissues: integer(),
+		parentId: text("parent_id"),
+		// subIssueCount: integer(),
 		rank: text().notNull(),
 		dueDate: integer("due_date", { mode: "timestamp_ms" }),
 	},
 	(table) => [
-		index("issue_assigneeId_idx").on(table.assigneeId),
+		foreignKey({
+			columns: [table.parentId],
+			foreignColumns: [table.id],
+			name: "issue_parentId_fk",
+		}).onDelete("set null"),
 		index("issue_rank_idx").on(table.rank),
+		index("issue_assigneeId_idx").on(table.assigneeId),
 		index("issue_teamId_idx").on(table.teamId),
+		unique().on(table.teamId, table.teamNumber),
 	],
 );
 
-const issueStatusTable = sqliteTable("issue_status", {
+const IssueStatus = sqliteTable("issue_status", {
 	id: text("id").primaryKey().notNull(),
 	title: text()
 		.notNull()
@@ -65,7 +79,7 @@ const issueStatusTable = sqliteTable("issue_status", {
 	description: text().meta({ validationSchema: type("string.trim") }),
 });
 
-const projectTable = sqliteTable("project", {
+const Project = sqliteTable("project", {
 	id: text("id").primaryKey().notNull(),
 	title: text()
 		.notNull()
@@ -73,6 +87,49 @@ const projectTable = sqliteTable("project", {
 	description: text().meta({ validationSchema: type("string.trim") }),
 });
 
-export default {
-	Issue: { table: issueTable, config: defineModelConfig(issueTable) },
+const schema = {
+	Issue,
+	IssueStatus,
+	Project,
 };
+
+export default schema;
+
+export const config = {
+	Issue: defineModelConfig(schema.Issue),
+	IssueStatus: defineModelConfig(schema.IssueStatus),
+	Project: defineModelConfig(schema.Project),
+};
+
+export const relations = defineRelations(schema, (r) => ({
+	Issue: {
+		Status: r.one.IssueStatus({
+			from: r.Issue.statusId,
+			to: r.IssueStatus.id,
+		}),
+		Project: r.one.Project({
+			from: r.Issue.projectId,
+			to: r.Project.id,
+		}),
+		Parent: r.one.Issue({
+			from: r.Issue.parentId,
+			to: r.Issue.id,
+		}),
+		Children: r.many.Issue({
+			from: r.Issue.parentId,
+			to: r.Issue.id,
+		}),
+	},
+	IssueStatus: {
+		Issues: r.many.Issue({
+			from: r.IssueStatus.id,
+			to: r.Issue.statusId,
+		}),
+	},
+	Project: {
+		Issues: r.many.Issue({
+			from: r.Project.id,
+			to: r.Issue.projectId,
+		}),
+	},
+}));
