@@ -7,7 +7,7 @@ import { appRoot } from "@/utils/app-root";
 import { env } from "../../env";
 import mainSchema from "./schema-main";
 import mainRelations from "./schema-main/relations";
-import { orgSchema } from "./schema-org";
+import { orgSchema, orgRelations } from "./schema-org";
 import { createDrizzleExtension } from "./utils/sync-extension";
 
 class DatabaseManager {
@@ -79,7 +79,7 @@ class DatabaseManager {
 		client.run("PRAGMA journal_mode = WAL;");
 
 		const orgDb = createDrizzleExtension(
-			drizzle({ client, schema: orgSchema }),
+			drizzle({ client, schema: orgSchema, relations: orgRelations }),
 		);
 
 		if (!isNewDatabase) {
