@@ -19,112 +19,93 @@ const app = createOrgApp()
 		const db = await dbManager.getOrgDb(c.get("organization").id);
 		const payload = c.req.valid("json");
 
-		const groupedPayload = {} as CudTypes["GroupedPayload"];
+		const hashData = (data: any) =>
+			JSON.stringify(Object.entries(data || {}).sort());
+
+		type PreparedTask = { modelName: (typeof payload)[number]["modelName"] } & (
+			| { type: "insert"; data: any[] }
+			| { type: "update"; data: any; ids: string[] }
+			| { type: "delete"; ids: string[] }
+		);
+
+		const taskMap = new Map<string, PreparedTask>();
 
 		for (const itemPayload of payload) {
-			const groupKey =
-				`${itemPayload.action}-${itemPayload.modelName}` as const;
+			const { action, modelName, modelId } = itemPayload;
 
-			if (itemPayload.action === "delete") {
-				groupedPayload[groupKey] ??= [];
-				groupedPayload[groupKey].push(itemPayload);
+			if (action === "delete") {
+				const key = `delete-${modelName}`;
+				if (!taskMap.has(key)) {
+					taskMap.set(key, { type: "delete", modelName, ids: [] });
+				}
+				(
+					taskMap.get(key) as Extract<PreparedTask, { type: "delete" }>
+				).ids.push(modelId);
 				continue;
 			}
 
-			const schema =
-				orgModelConfigs[itemPayload.modelName].schema[itemPayload.action];
+			const schema = orgModelConfigs[modelName].schema[action];
 			const data = schema(itemPayload.data);
 
 			if (data instanceof type.errors) {
 				console.error(data.summary);
 				throw data;
 			}
-			groupedPayload[groupKey] ??= [];
-			groupedPayload[groupKey].push({ ...itemPayload, data });
+
+			if (action === "insert") {
+				const key = `insert-${modelName}`;
+				if (!taskMap.has(key)) {
+					taskMap.set(key, { type: "insert", modelName, data: [] });
+				}
+				(
+					taskMap.get(key) as Extract<PreparedTask, { type: "insert" }>
+				).data.push(data);
+			} else if (action === "update") {
+				const hash = hashData(data);
+				const key = `update-${modelName}-${hash}`;
+
+				if (!taskMap.has(key)) {
+					taskMap.set(key, { type: "update", modelName, data, ids: [] });
+				}
+				(
+					taskMap.get(key) as Extract<PreparedTask, { type: "update" }>
+				).ids.push(modelId);
+			}
 		}
 
-		const groupedKeys = Object.keys(groupedPayload) as CudTypes["GroupKeys"][];
-		let modelDbData: { id: string }[];
-		if (
-			groupedKeys.length === 1 &&
-			(groupedKeys[0]!.startsWith("update")
-				? groupedKeys[0]!.length === 1
-				: true)
-		) {
-			const groupKey = groupedKeys[0]!;
-			const payloadArray = groupedPayload[groupKey]!;
-			const payloadItem = payloadArray[0]!;
-			const action = payloadItem.action;
-			const modelName = payloadItem.modelName;
+		const preparedTasks = Array.from(taskMap.values());
 
-			// TODO: implement hooks
-			if (action === "insert") {
-				modelDbData = db
-					.insert(orgSchema[modelName])
-					.values(payloadArray.map((p) => p.data as any))
+		const executeTask = (tx: typeof db, task: PreparedTask) => {
+			const table = orgSchema[task.modelName];
+
+			if (task.type === "insert") {
+				return tx.insert(table).values(task.data).returning().all();
+			}
+			if (task.type === "update") {
+				return tx
+					.update(table)
+					.set(task.data)
+					.where(inArray(table.id, task.ids))
 					.returning()
 					.all();
-			} else if (action === "update") {
-				// TODO: group by payloadItem.data
-				modelDbData = payloadArray.flatMap((payloadItem) =>
-					db
-						.update(orgSchema[modelName])
-						.set(payloadItem.data as any)
-						.where(eq(orgSchema[modelName].id, payloadItem.modelId))
-						.returning()
-						.all(),
-				);
-			} else if (action === "delete") {
-				db.delete(orgSchema[modelName])
-					.where(
-						inArray(
-							orgSchema[modelName].id,
-							payloadArray.map((i) => i.modelId),
-						),
-					)
-					.run();
-				modelDbData = [];
-			} else {
-				throw new Error(`Invalid action: ${action}`);
 			}
-		} else {
-			modelDbData = db.transaction((tx) =>
-				Object.values(groupedPayload).flatMap((payloadArray) => {
-					const payloadItem = payloadArray[0]!;
-					const action = payloadItem.action;
-					const modelName = payloadItem.modelName;
+			if (task.type === "delete") {
+				tx.delete(table).where(inArray(table.id, task.ids)).run();
+				return [];
+			}
+			return [];
+		};
 
-					if (action === "insert") {
-						return tx
-							.insert(orgSchema[modelName])
-							.values(payloadArray.map((p) => p.data as any))
-							.returning()
-							.all();
-					}
-					if (action === "update") {
-						return payloadArray.flatMap((payloadItem) =>
-							tx
-								.update(orgSchema[modelName])
-								.set(payloadItem.data as any)
-								.where(eq(orgSchema[modelName].id, payloadItem.modelId))
-								.returning()
-								.all(),
-						);
-					}
-					if (action === "delete") {
-						tx.delete(orgSchema[modelName])
-							.where(
-								inArray(
-									orgSchema[modelName].id,
-									payloadArray.map((i) => i.modelId),
-								),
-							)
-							.run();
-						return [];
-					}
-					throw new Error(`Invalid action: ${action}`);
-				}),
+		let modelDbData: { id: string }[];
+
+		if (preparedTasks.length === 1) {
+			modelDbData = executeTask(db, preparedTasks[0]!);
+		} else if (preparedTasks.length > 1) {
+			modelDbData = db.transaction((tx) =>
+				preparedTasks.flatMap((task) => executeTask(tx as any, task)),
 			);
+		} else {
+			modelDbData = [];
 		}
 
 		return await handleSyncData(payload, modelDbData, c);
