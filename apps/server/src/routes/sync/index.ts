@@ -19,6 +19,12 @@ const app = createOrgApp()
 		const db = await dbManager.getOrgDb(c.get("organization").id);
 		const payload = c.req.valid("json");
 
+		const actionToHookName = {
+			insert: "Create",
+			update: "Update",
+			delete: "Delete",
+		} as const;
+
 		const hashData = (data: any) =>
 			JSON.stringify(Object.entries(data || {}).sort());
 
@@ -75,25 +81,47 @@ const app = createOrgApp()
 
 		const preparedTasks = Array.from(taskMap.values());
 
+		for (const task of preparedTasks) {
+			const hookSuffix = actionToHookName[task.type];
+			const hook =
+				orgModelConfigs[task.modelName].hooks?.[`before${hookSuffix}`];
+
+			if (hook) {
+				// Pass the task so the hook can mutate task.data if needed
+				hook(task);
+			}
+		}
+
 		const executeTask = (tx: typeof db, task: PreparedTask) => {
 			const table = orgSchema[task.modelName];
+			const hookSuffix = actionToHookName[task.type];
+			const hooks = orgModelConfigs[task.modelName].hooks || {};
 
-			if (task.type === "insert") {
-				return tx.insert(table).values(task.data).returning().all();
+			if (hooks[`txBefore${hookSuffix}`]) {
+				hooks[`txBefore${hookSuffix}`](task, tx);
 			}
-			if (task.type === "update") {
-				return tx
+
+			let result;
+			if (task.type === "insert") {
+				result = tx.insert(table).values(task.data).returning().all();
+			} else if (task.type === "update") {
+				result = tx
 					.update(table)
 					.set(task.data)
 					.where(inArray(table.id, task.ids))
 					.returning()
 					.all();
-			}
-			if (task.type === "delete") {
+			} else if (task.type === "delete") {
 				tx.delete(table).where(inArray(table.id, task.ids)).run();
-				return [];
+				result = [];
 			}
-			return [];
+
+			if (hooks[`txAfter${hookSuffix}`]) {
+				hooks[`txAfter${hookSuffix}`](result, task, tx);
+			}
+
+			(task as any).dbResult = result;
+			return result || [];
 		};
 
 		let modelDbData: { id: string }[];
@@ -106,6 +134,16 @@ const app = createOrgApp()
 			);
 		} else {
 			modelDbData = [];
+		}
+
+		for (const task of preparedTasks) {
+			const hookSuffix = actionToHookName[task.type];
+			const hook =
+				orgModelConfigs[task.modelName].hooks?.[`after${hookSuffix}`];
+
+			if (hook) {
+				hook((task as any).dbResult, task);
+			}
 		}
 
 		return await handleSyncData(payload, modelDbData, c);
