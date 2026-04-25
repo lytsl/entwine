@@ -8,6 +8,7 @@ import {
 	createSelectSchema,
 	createUpdateSchema,
 } from "../drizzle-arktype";
+import type { drizzle } from "drizzle-orm/bun-sqlite";
 
 type Session = NonNullableFields<typeof auth.$Infer.Session>;
 
@@ -20,37 +21,58 @@ export type UpdatePayload<T extends SQLiteTable> = {
 }[];
 export type DeletePayload = { id: string }[];
 
-export interface ModelHooks<T extends SQLiteTable> {
-	beforeCreate?: (ctx: {
+type HookFn<Ctx> = (ctx: Ctx) => void | Promise<void>;
+type SyncHookFn<Ctx> = (ctx: Ctx) => void;
+
+interface BaseHooks<T extends SQLiteTable> {
+	beforeCreate: HookFn<{
 		session: Session;
 		payload: CreatePayload<T>;
-	}) => void | Promise<void>;
-	afterCreate?: (ctx: {
+		db: ReturnType<typeof drizzle>;
+	}>;
+	afterCreate: HookFn<{
 		session: Session;
 		payload: CreatePayload<T>;
+		db: ReturnType<typeof drizzle>;
 		result: any;
-	}) => void | Promise<void>;
+	}>;
 
-	beforeUpdate?: (ctx: {
+	beforeUpdate: HookFn<{
 		session: Session;
 		payload: UpdatePayload<T>;
-	}) => void | Promise<void>;
-	afterUpdate?: (ctx: {
+		db: ReturnType<typeof drizzle>;
+	}>;
+	afterUpdate: HookFn<{
 		session: Session;
 		payload: UpdatePayload<T>;
+		db: ReturnType<typeof drizzle>;
 		result: any;
-	}) => void | Promise<void>;
+	}>;
 
-	beforeDelete?: (ctx: {
+	beforeDelete: HookFn<{
 		session: Session;
 		payload: DeletePayload;
-	}) => void | Promise<void>;
-	afterDelete?: (ctx: {
+		db: ReturnType<typeof drizzle>;
+	}>;
+	afterDelete: HookFn<{
 		session: Session;
 		payload: DeletePayload;
+		db: ReturnType<typeof drizzle>;
 		result: any;
-	}) => void | Promise<void>;
+	}>;
 }
+
+type ToTxHook<F> = F extends (ctx: infer Ctx) => any
+	? SyncHookFn<Omit<Ctx, "db"> & { tx: ReturnType<typeof drizzle> }>
+	: never;
+
+export type ModelHooks<T extends SQLiteTable> = {
+	[K in keyof BaseHooks<T>]?: BaseHooks<T>[K];
+} & {
+	[K in keyof BaseHooks<T> as `tx${Capitalize<K & string>}`]?: ToTxHook<
+		BaseHooks<T>[K]
+	>;
+};
 
 export interface ModelOptions<T extends SQLiteTable> {
 	filters?: (session: Session) => SQL<unknown> | undefined;

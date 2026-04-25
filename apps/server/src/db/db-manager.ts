@@ -80,7 +80,9 @@ class DatabaseManager {
 
 		const orgDb = createDrizzleExtension(
 			drizzle({ client, schema: orgSchema, relations: orgRelations }),
-		);
+    );
+
+		orgDb.transaction((tx)=>)
 
 		if (!isNewDatabase) {
 			const errorResponse = migrate(orgDb, {

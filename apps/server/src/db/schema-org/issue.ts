@@ -1,5 +1,5 @@
 import { type } from "arktype";
-import { defineRelations, sql } from "drizzle-orm";
+import { and, defineRelations, eq, sql } from "drizzle-orm";
 import {
 	foreignKey,
 	index,
@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { customJson } from "../utils/custom-drizzle-types";
 import { defineModelConfig } from "../utils/define-model-config";
+import { orgSchema } from ".";
 
 export enum IssuePriority {
 	NO_PRIORITY = 0,
@@ -96,7 +97,56 @@ const schema = {
 export default schema;
 
 export const config = {
-	Issue: defineModelConfig(schema.Issue),
+	Issue: defineModelConfig(schema.Issue, {
+		hooks: {
+			txBeforeCreate({ payload, tx }) {
+				const teamCountMap = payload.reduce(
+					(acc, { data }) => {
+						acc[data.teamId] = (acc[data.teamId] ?? 0) + 1;
+						return acc;
+					},
+					{} as Record<string, number>,
+				);
+
+				const teamSeqMap = {} as Record<string, number>;
+				Object.entries(teamCountMap).forEach(([teamId, count]) => {
+					try {
+						const [seqData] = tx
+							.update(orgSchema.EntitySequence)
+							.set({
+								seq: sql`${orgSchema.EntitySequence.seq} + 								${count}`,
+							})
+							.where(
+								and(
+									eq(orgSchema.EntitySequence.entityId, teamId),
+									eq(
+										orgSchema.EntitySequence.entityName,
+										orgSchema.Issue._.name,
+									),
+								),
+							)
+							.returning({ seq: orgSchema.EntitySequence.seq })
+							.all();
+
+						teamSeqMap[teamId] = seqData!.seq;
+					} catch (e) {
+						tx.insert(orgSchema.EntitySequence)
+							.values({
+								seq: count,
+								entityId: teamId,
+								entityName: orgSchema.Issue._.name,
+							})
+							.run();
+						teamSeqMap[teamId] = count;
+					}
+				});
+
+				payload.reverse().forEach(({ data }) => {
+					data.teamNumber = teamSeqMap[data.teamId]!--;
+				});
+			},
+		},
+	}),
 	IssueStatus: defineModelConfig(schema.IssueStatus),
 	Project: defineModelConfig(schema.Project),
 };

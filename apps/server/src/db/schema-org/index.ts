@@ -1,9 +1,9 @@
 import issueSchema from "./issue";
-import syncSchema from "./sync";
+import metadataSchema from "./metadata";
 import { relations as authRelations } from "./issue";
 import { config as issueConfig } from "./issue";
 
-export const orgSchema = { ...syncSchema, ...issueSchema };
+export const orgSchema = { ...metadataSchema, ...issueSchema };
 
 export const orgRelations = {
 	...authRelations,
