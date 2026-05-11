@@ -13,106 +13,126 @@ import { useViewStore } from "@/store/view-store";
 import { GroupIssues } from "./group-issues";
 import { CustomDragLayer } from "./issue-grid";
 import { SearchIssues } from "./search-issues";
+import { Route, useOrgRoutContext } from "@/routes/$orgSlug/layout";
+import type { TanStackCollections } from "@/lib/collection-wrapper";
+import type { idbSchema } from "@/lib/db/schema";
+import { eq, useLiveQuery, useLiveSuspenseQuery } from "@tanstack/react-db";
 
 export default function AllIssues() {
-	const { isSearchOpen, searchQuery } = useSearchStore();
-	const { viewType } = useViewStore();
-	const { hasActiveFilters } = useFilterStore();
+  const { isSearchOpen, searchQuery } = useSearchStore();
+  const { viewType } = useViewStore();
+  const { hasActiveFilters } = useFilterStore();
 
-	const isSearching = isSearchOpen && searchQuery.trim() !== "";
-	const isViewTypeGrid = viewType === "grid";
-	const isFiltering = hasActiveFilters();
+  const isSearching = isSearchOpen && searchQuery.trim() !== "";
+  const isViewTypeGrid = viewType === "grid";
+  const isFiltering = hasActiveFilters();
 
-	return (
-		<div
-			className={cn("min-h-0 w-full flex-1", {
-				"overflow-x-auto": isViewTypeGrid,
-				"overflow-y-auto": !isViewTypeGrid,
-			})}
-		>
-			{isSearching ? (
-				<SearchIssuesView />
-			) : isFiltering ? (
-				<FilteredIssuesView isViewTypeGrid={isViewTypeGrid} />
-			) : (
-				<GroupIssuesListView isViewTypeGrid={isViewTypeGrid} />
-			)}
-		</div>
-	);
+  return (
+    <div
+      className={cn("min-h-0 w-full flex-1", {
+        "overflow-x-auto": isViewTypeGrid,
+        "overflow-y-auto": !isViewTypeGrid,
+      })}
+    >
+      {isSearching ? (
+        <SearchIssuesView />
+      ) : isFiltering ? (
+        <FilteredIssuesView isViewTypeGrid={isViewTypeGrid} />
+      ) : (
+        <GroupIssuesListView isViewTypeGrid={isViewTypeGrid} />
+      )}
+    </div>
+  );
 }
 
 const SearchIssuesView = () => (
-	<div className="mb-6 px-6">
-		<SearchIssues />
-	</div>
+  <div className="mb-6 px-6">
+    <SearchIssues />
+  </div>
 );
 
 const FilteredIssuesView: FC<{
-	isViewTypeGrid: boolean;
+  isViewTypeGrid: boolean;
 }> = ({ isViewTypeGrid = false }) => {
-	const { filters } = useFilterStore();
-	const { filterIssues } = useIssuesStore();
+  const { filters } = useFilterStore();
+  const { filterIssues } = useIssuesStore();
 
-	// Apply filters to get filtered issues
-	const filteredIssues = useMemo(() => {
-		return filterIssues(filters);
-	}, [filterIssues, filters]);
+  // Apply filters to get filtered issues
+  const filteredIssues = useMemo(() => {
+    return filterIssues(filters);
+  }, [filterIssues, filters]);
 
-	// Group filtered issues by status
-	const filteredIssuesByStatus = useMemo(() => {
-		const result: Record<string, Issue[]> = {};
+  // Group filtered issues by status
+  const filteredIssuesByStatus = useMemo(() => {
+    const result: Record<string, Issue[]> = {};
 
-		status.forEach((statusItem) => {
-			result[statusItem.id] = filteredIssues.filter(
-				(issue) => issue.status.id === statusItem.id,
-			);
-		});
+    status.forEach((statusItem) => {
+      result[statusItem.id] = filteredIssues.filter(
+        (issue) => issue.status.id === statusItem.id,
+      );
+    });
 
-		return result;
-	}, [filteredIssues]);
+    return result;
+  }, [filteredIssues]);
 
-	return (
-		<DndProvider backend={HTML5Backend}>
-			<CustomDragLayer />
-			<div
-				className={cn(
-					isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
-				)}
-			>
-				{status.map((statusItem) => (
-					<GroupIssues
-						key={statusItem.id}
-						status={statusItem}
-						issues={filteredIssuesByStatus[statusItem.id] || []}
-						count={filteredIssuesByStatus[statusItem.id]?.length || 0}
-					/>
-				))}
-			</div>
-		</DndProvider>
-	);
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <CustomDragLayer />
+      <div
+        className={cn(
+          isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
+        )}
+      >
+        {status.map((statusItem) => (
+          <GroupIssues
+            key={statusItem.id}
+            status={statusItem}
+            issues={filteredIssuesByStatus[statusItem.id] || []}
+            count={filteredIssuesByStatus[statusItem.id]?.length || 0}
+          />
+        ))}
+      </div>
+    </DndProvider>
+  );
 };
 
 const GroupIssuesListView: FC<{
-	isViewTypeGrid: boolean;
+  isViewTypeGrid: boolean;
 }> = ({ isViewTypeGrid = false }) => {
-	const { issuesByStatus } = useIssuesStore();
-	return (
-		<DndProvider backend={HTML5Backend}>
-			<CustomDragLayer />
-			<div
-				className={cn(
-					isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
-				)}
-			>
-				{status.map((statusItem) => (
-					<GroupIssues
-						key={statusItem.id}
-						status={statusItem}
-						issues={issuesByStatus[statusItem.id] || []}
-						count={issuesByStatus[statusItem.id]?.length || 0}
-					/>
-				))}
-			</div>
-		</DndProvider>
-	);
+  const { issuesByStatus } = useIssuesStore();
+  const { collections } = useOrgRoutContext();
+
+  const queryData = useLiveSuspenseQuery((q) =>
+    q
+      .from({ Issue: collections.Issue })
+      .leftJoin(
+        { IssueStatus: collections.IssueStatus },
+        ({ Issue, IssueStatus }) => eq(Issue.statusId, IssueStatus.id),
+      )
+      .leftJoin({ Project: collections.Project }, ({ Issue, Project }) =>
+        eq(Issue.projectId, Project.id),
+      ),
+  );
+
+  console.log("GroupIssuesListView queryData", queryData);
+
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <CustomDragLayer />
+      <div
+        className={cn(
+          isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
+        )}
+      >
+        {status.map((statusItem) => (
+          <GroupIssues
+            key={statusItem.id}
+            status={statusItem}
+            issues={issuesByStatus[statusItem.id] || []}
+            count={issuesByStatus[statusItem.id]?.length || 0}
+          />
+        ))}
+      </div>
+    </DndProvider>
+  );
 };

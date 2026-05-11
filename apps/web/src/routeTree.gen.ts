@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TestRouteImport } from './routes/test'
 import { Route as OrgSlugLayoutRouteImport } from './routes/$orgSlug/layout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgSlugIndexRouteImport } from './routes/$orgSlug/index'
@@ -20,11 +19,6 @@ import { Route as authAuthJoinRouteImport } from './routes/(auth)/_auth.join'
 import { Route as authAuthAddAccountRouteImport } from './routes/(auth)/_auth.add-account'
 import { Route as OrgSlugTeamTeamSlugViewRouteImport } from './routes/$orgSlug/team/$teamSlug/$view'
 
-const TestRoute = TestRouteImport.update({
-  id: '/test',
-  path: '/test',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OrgSlugLayoutRoute = OrgSlugLayoutRouteImport.update({
   id: '/$orgSlug',
   path: '/$orgSlug',
@@ -73,7 +67,6 @@ const OrgSlugTeamTeamSlugViewRoute = OrgSlugTeamTeamSlugViewRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$orgSlug': typeof OrgSlugLayoutRouteWithChildren
-  '/test': typeof TestRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/$orgSlug/': typeof OrgSlugIndexRoute
@@ -83,7 +76,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/test': typeof TestRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/$orgSlug': typeof OrgSlugIndexRoute
@@ -95,7 +87,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$orgSlug': typeof OrgSlugLayoutRouteWithChildren
-  '/test': typeof TestRoute
   '/(auth)/_auth': typeof authAuthRouteWithChildren
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
@@ -109,7 +100,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$orgSlug'
-    | '/test'
     | '/login'
     | '/signup'
     | '/$orgSlug/'
@@ -119,7 +109,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/test'
     | '/login'
     | '/signup'
     | '/$orgSlug'
@@ -130,7 +119,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$orgSlug'
-    | '/test'
     | '/(auth)/_auth'
     | '/(auth)/login'
     | '/(auth)/signup'
@@ -143,7 +131,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OrgSlugLayoutRoute: typeof OrgSlugLayoutRouteWithChildren
-  TestRoute: typeof TestRoute
   authAuthRoute: typeof authAuthRouteWithChildren
   authLoginRoute: typeof authLoginRoute
   authSignupRoute: typeof authSignupRoute
@@ -151,13 +138,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/test': {
-      id: '/test'
-      path: '/test'
-      fullPath: '/test'
-      preLoaderRoute: typeof TestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/$orgSlug': {
       id: '/$orgSlug'
       path: '/$orgSlug'
@@ -255,7 +235,6 @@ const authAuthRouteWithChildren = authAuthRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OrgSlugLayoutRoute: OrgSlugLayoutRouteWithChildren,
-  TestRoute: TestRoute,
   authAuthRoute: authAuthRouteWithChildren,
   authLoginRoute: authLoginRoute,
   authSignupRoute: authSignupRoute,

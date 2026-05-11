@@ -4,36 +4,51 @@ import type { z } from "zod";
 // Assuming ZodDBSchemaDef is imported from your previous definitions
 import type { LazyIDB, ZodDBSchemaDef } from "./idb-wrapper";
 import { webSocketCollectionOptions } from "./sync/tdb-collection";
+import { syncEventBus } from "./sync/events";
 
 /**
  * Maps the inferred Zod schema types directly to TanStack DB Collection types.
  */
 export type TanStackCollections<T extends ZodDBSchemaDef> = {
-	[K in keyof T]: Collection<z.infer<T[K]["schema"]>>;
+  [K in keyof T]: Collection<z.infer<T[K]["schema"]>>;
 };
 
 /**
  * Transforms a ZodDBSchemaDef into a typed record of TanStack DB Collections.
  */
 export function createTanStackCollections<T extends ZodDBSchemaDef>(
-	db: LazyIDB,
-	schema: T,
-): TanStackCollections<T> {
-	const collections: Record<string, any> = {};
+  db: LazyIDB,
+  schema: T,
+) {
+  // return new Promise<TanStackCollections<T>>((resolve, reject) => {
+  const collections: Record<string, any> = {};
+  const schemaEntries = Object.entries(schema);
 
-	for (const [storeName, storeDef] of Object.entries(schema)) {
-		// Fallback to "id" if keyPath isn't explicitly defined in the schema
-		const _keyProp = (storeDef.keyPath as string) || "id";
+  // console.log("on ", `${schemaEntries.at(-1)?.[0]}:syncInitiated`);
+  // syncEventBus.on(`${schemaEntries.at(-1)?.[0]}:syncInitiated`, {
+  //   handle: () => {
+  //     resolve(collections as TanStackCollections<T>);
+  //   },
+  //   once: true,
+  // });
 
-		// TanStack DB collections require a unique key identifier for normalization.
-		collections[storeName] = createCollection(
-			webSocketCollectionOptions({
-				schema: storeDef.schema,
-				modelName: storeName,
-				db,
-			}),
-		);
-	}
+  for (const [storeName, storeDef] of schemaEntries) {
+    const collection = createCollection(
+      webSocketCollectionOptions({
+        schema: storeDef.schema,
+        modelName: storeName,
+        db,
+      }),
+    );
+    collections[storeName] = collection;
 
-	return collections as TanStackCollections<T>;
+    collection.startSyncImmediate();
+  }
+
+  return collections;
+
+  // setTimeout(() => {
+  //   reject(`syncInitiated was not triggered after 1 second`);
+  // }, 1000);
+  // });
 }
