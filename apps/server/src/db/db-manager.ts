@@ -10,6 +10,9 @@ import mainRelations from "./schema-main/relations";
 import orgSchema, { orgRelations } from "./schema-org";
 import { createDrizzleExtension } from "./utils/sync-extension";
 import { IssueStatusType } from "./schema-org/issue";
+import { notInArray } from "drizzle-orm/singlestore-core/expressions";
+import { inArray } from "drizzle-orm";
+import { SyncActionEnum } from "./schema-org/metadata";
 
 class DatabaseManager {
   private client: Database;
@@ -84,16 +87,40 @@ class DatabaseManager {
     );
 
     orgDb.transaction((tx) => {
-      tx.insert(orgSchema.IssueStatus)
-        .values(
-          Object.values(IssueStatusType).map((type) => ({
-            type,
-            name: type,
-            indefinite: true,
-          })),
+      const existingIssueStatuses = tx
+        .select()
+        .from(orgSchema.IssueStatus)
+        .where(
+          inArray(orgSchema.IssueStatus.type, Object.values(IssueStatusType)),
         )
-        .onConflictDoNothing()
-        .run();
+        .all();
+
+      const newIssueStatuses = Object.values(IssueStatusType).filter(
+        (name) => !existingIssueStatuses.find((i) => i.name === name),
+      );
+      if (newIssueStatuses.length > 0) {
+        const issueStatuses = tx
+          .insert(orgSchema.IssueStatus)
+          .values(
+            newIssueStatuses.map((type) => ({
+              type,
+              name: type,
+              indefinite: true,
+            })),
+          )
+          .returning()
+          .all();
+
+        tx.insert(orgSchema.Sync)
+          .values(
+            issueStatuses.map((p) => ({
+              modelId: p.id,
+              modelName: "IssueStatus",
+              action: SyncActionEnum.Insert,
+            })),
+          )
+          .run();
+      }
     });
 
     if (!isNewDatabase) {

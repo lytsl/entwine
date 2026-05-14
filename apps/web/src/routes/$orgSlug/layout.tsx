@@ -6,7 +6,7 @@ import {
   type TanStackCollections,
 } from "@/lib/collection-wrapper";
 import { idbSchema } from "@/lib/db/schema";
-import { createLazyIDB } from "@/lib/idb-wrapper";
+import { createLazyIDB, type ExtractZodSchemas } from "@/lib/idb-wrapper";
 import { AppSidebar } from "./-components/app-sidebar";
 import { syncEventBus } from "@/lib/sync/events";
 import { api } from "@/utils/api";
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/$orgSlug")({
   beforeLoad: async ({ context, params }) => {
     sessionStorage.setItem("$orgSlug", params.orgSlug);
     const db = await createLazyIDB(params.orgSlug, 1, { stores: idbSchema });
-    const collections = await createTanStackCollections(db as any, idbSchema);
+    const collections = createTanStackCollections(db as any, idbSchema);
 
     const syncData = await db.get("_metadata", "syncData");
     if (!syncData)
@@ -31,8 +31,6 @@ export const Route = createFileRoute("/$orgSlug")({
     const { lastSyncId } = syncData || {
       lastSyncId: 0,
     };
-
-    // debugger;
 
     const deltaData = await api
       .get<{ data: Array<WsSyncData>; lastSyncId: number }>("sync/delta", {
@@ -52,8 +50,6 @@ export const Route = createFileRoute("/$orgSlug")({
         "readwrite",
       );
 
-      debugger;
-
       await Promise.all([
         ...Object.entries(modelGroupedData).map(([modelName, data]) =>
           syncEventBus.emit(`${modelName}:sync`, {
@@ -67,15 +63,15 @@ export const Route = createFileRoute("/$orgSlug")({
           .put({ lastSyncId: deltaData.lastSyncId }, "syncData"),
         tx.done,
       ]);
-
-      await Promise.all(
-        Object.keys(modelGroupedData).map((modelName) =>
-          syncEventBus.emit(`${modelName}:markReady`, {
-            lastSyncId: deltaData.lastSyncId,
-          }),
-        ),
-      );
     }
+
+    await Promise.all(
+      Object.keys(idbSchema).map((modelName) =>
+        syncEventBus.emit(`${modelName}:markReady`, {
+          lastSyncId: deltaData.lastSyncId,
+        }),
+      ),
+    );
 
     const { data: sessionData } = await authClient.getSession();
 
@@ -92,6 +88,7 @@ export const Route = createFileRoute("/$orgSlug")({
   },
 });
 
+export type Collections = ExtractZodSchemas<typeof idbSchema>;
 export const useOrgRoutContext = () =>
   Route.useRouteContext() as {
     collections: TanStackCollections<typeof idbSchema>;

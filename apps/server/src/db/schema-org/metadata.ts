@@ -6,13 +6,25 @@ import {
   text,
 } from "drizzle-orm/sqlite-core";
 
+export enum SyncActionEnum {
+  Insert = "insert",
+  Update = "update",
+  Delete = "delete",
+}
+
 export const Sync = sqliteTable(
   "sync",
   {
     id: integer("id").primaryKey({ autoIncrement: false }).notNull(),
     modelName: text("model_name").notNull(),
     modelId: text("model_id").notNull(),
-    action: text("action", { enum: ["insert", "update", "delete"] }).notNull(),
+    action: text("action", {
+      enum: [
+        SyncActionEnum.Insert,
+        SyncActionEnum.Update,
+        SyncActionEnum.Delete,
+      ],
+    }).notNull(),
   },
   (table) => [index("sync_model_idx").on(table.modelName, table.modelId)],
 );

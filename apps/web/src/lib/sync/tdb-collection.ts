@@ -128,9 +128,9 @@ export function webSocketCollectionOptions<
 
             switch (item.action) {
               case "insert":
-                return modelStore.add(item.data);
+                return modelStore.add(item.data, item.data.id as string);
               case "update":
-                return modelStore.put(item.data);
+                return modelStore.put(item.data, item.data.id as string);
               case "delete":
                 return modelStore.delete((item.data as any).id);
               default:
@@ -220,7 +220,13 @@ export function webSocketCollectionOptions<
       .post(apiPath, {
         json: params.transaction.mutations.map((mutation) => ({
           data: mutation.modified,
+          modelId: mutation.modified.id,
+          modelName: config.modelName ,
+          action: "insert"
         })),
+        headers: {
+		"x-organization-slug": sessionStorage.getItem("orgSlug") || "linear",
+	},
       })
       .json<{ lastSyncId: number }>();
     awaitLastSyncId(data?.lastSyncId);

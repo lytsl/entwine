@@ -54,6 +54,8 @@ const SearchIssuesView = () => (
 const FilteredIssuesView: FC<{
   isViewTypeGrid: boolean;
 }> = ({ isViewTypeGrid = false }) => {
+  const { collections } = useOrgRoutContext();
+
   const { filters } = useFilterStore();
   const { filterIssues } = useIssuesStore();
 
@@ -68,12 +70,29 @@ const FilteredIssuesView: FC<{
 
     status.forEach((statusItem) => {
       result[statusItem.id] = filteredIssues.filter(
-        (issue) => issue.status.id === statusItem.id,
+        (issue) => issue.statusId === statusItem.id,
       );
     });
 
     return result;
   }, [filteredIssues]);
+
+  const issueQuery = useLiveSuspenseQuery((q) =>
+    q
+      .from({ issue: collections.Issue })
+      .leftJoin(
+        { issueStatus: collections.IssueStatus },
+        ({ issue, issueStatus }) => eq(issue.statusId, issueStatus.id),
+      )
+      .leftJoin({ project: collections.Project }, ({ issue, project }) =>
+        eq(issue.projectId, project.id),
+      )
+      .orderBy(({ issue }) => issue.priority, "asc"),
+  );
+
+  const issueGroupedData = Object.entries(
+    Object.groupBy(issueQuery.data, (d) => d.issue.statusId),
+  );
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -83,14 +102,19 @@ const FilteredIssuesView: FC<{
           isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
         )}
       >
-        {status.map((statusItem) => (
-          <GroupIssues
-            key={statusItem.id}
-            status={statusItem}
-            issues={filteredIssuesByStatus[statusItem.id] || []}
-            count={filteredIssuesByStatus[statusItem.id]?.length || 0}
-          />
-        ))}
+        {issueGroupedData.map(([statusId, data]) => {
+          const status = data?.[0]?.issueStatus;
+          if (!status) return null;
+
+          return (
+            <GroupIssues
+              key={statusId}
+              issueStatus={status}
+              data={data || []}
+              count={data?.length || 0}
+            />
+          );
+        })}
       </div>
     </DndProvider>
   );
@@ -99,22 +123,26 @@ const FilteredIssuesView: FC<{
 const GroupIssuesListView: FC<{
   isViewTypeGrid: boolean;
 }> = ({ isViewTypeGrid = false }) => {
-  const { issuesByStatus } = useIssuesStore();
   const { collections } = useOrgRoutContext();
 
-  const queryData = useLiveSuspenseQuery((q) =>
+  const issueQuery = useLiveSuspenseQuery((q) =>
     q
-      .from({ Issue: collections.Issue })
+      .from({ issue: collections.Issue })
       .leftJoin(
-        { IssueStatus: collections.IssueStatus },
-        ({ Issue, IssueStatus }) => eq(Issue.statusId, IssueStatus.id),
+        { issueStatus: collections.IssueStatus },
+        ({ issue, issueStatus }) => eq(issue.statusId, issueStatus.id),
       )
-      .leftJoin({ Project: collections.Project }, ({ Issue, Project }) =>
-        eq(Issue.projectId, Project.id),
-      ),
+      .leftJoin({ project: collections.Project }, ({ issue, project }) =>
+        eq(issue.projectId, project.id),
+      )
+      .orderBy(({ issue }) => issue.priority, "asc"),
   );
 
-  console.log("GroupIssuesListView queryData", queryData);
+  const issueGroupedData = Object.entries(
+    Object.groupBy(issueQuery.data, (d) => d.issue.statusId),
+  );
+
+  console.log("GroupIssuesListView queryData", issueQuery);
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -124,14 +152,19 @@ const GroupIssuesListView: FC<{
           isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
         )}
       >
-        {status.map((statusItem) => (
-          <GroupIssues
-            key={statusItem.id}
-            status={statusItem}
-            issues={issuesByStatus[statusItem.id] || []}
-            count={issuesByStatus[statusItem.id]?.length || 0}
-          />
-        ))}
+        {issueGroupedData.map(([statusId, data]) => {
+          const status = data?.[0]?.issueStatus;
+          if (!status) return null;
+
+          return (
+            <GroupIssues
+              key={statusId}
+              issueStatus={status}
+              data={data || []}
+              count={data?.length || 0}
+            />
+          );
+        })}
       </div>
     </DndProvider>
   );

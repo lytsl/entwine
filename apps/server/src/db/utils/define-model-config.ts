@@ -10,16 +10,33 @@ import {
 } from "../drizzle-arktype";
 import type { drizzle } from "drizzle-orm/bun-sqlite";
 
+import { configure } from "arktype/config";
+configure({ onUndeclaredKey: "delete" });
+
 type Session = NonNullableFields<typeof auth.$Infer.Session>;
 
+// ({
+//    type: "insert";
+//    data: any[];
+// } | {
+//    type: "update";
+//    data: any;
+//    ids: string[];
+// } | {
+//    type: "delete";
+//    ids: string[];
+// })
+
 export type CreatePayload<T extends SQLiteTable> = {
-  data: InferInsertModel<T>;
-}[];
+  type: "insert";
+  data: InferInsertModel<T>[];
+};
 export type UpdatePayload<T extends SQLiteTable> = {
-  id: string;
-  data: Partial<InferInsertModel<T>>;
-}[];
-export type DeletePayload = { id: string }[];
+  type: "update";
+  data: Partial<InferInsertModel<T>>[];
+  ids: string[];
+};
+export type DeletePayload = { type: "delete"; ids: string[] };
 
 type HookFn<Ctx> = (ctx: Ctx) => void | Promise<void>;
 type SyncHookFn<Ctx> = (ctx: Ctx) => void;

@@ -52,10 +52,10 @@ export const Issue = sqliteTable(
     statusId: text("status_id")
       .notNull()
       .references(() => IssueStatus.id, { onDelete: "restrict" }),
-    assigneeId: text("assignee_id").notNull(),
+    assigneeId: text("assignee_id"),
     priority: integer()
       .notNull()
-      .meta({ validationSchema: type.enumerated(IssuePriority) }),
+      .meta({ validationSchema: type.valueOf(IssuePriority) }),
     labels: customJson<string[]>("labels").meta({
       validationSchema: type("string[]"),
     }),
@@ -113,16 +113,14 @@ const schema = {
   Project,
 };
 
-type t1 = typeof Project.$inferSelect;
-
 export default schema;
 
 export const config = {
   Issue: defineModelConfig(schema.Issue, {
     hooks: {
       txBeforeInsert({ payload, tx }) {
-        const teamCountMap = payload.reduce(
-          (acc, { data }) => {
+        const teamCountMap = payload.data.reduce(
+          (acc, data) => {
             acc[data.teamId] = (acc[data.teamId] ?? 0) + 1;
             return acc;
           },
@@ -140,7 +138,7 @@ export const config = {
               .where(
                 and(
                   eq(metadataSchema.EntitySequence.entityId, teamId),
-                  eq(metadataSchema.EntitySequence.entityName, Issue._.name),
+                  eq(metadataSchema.EntitySequence.entityName, "Issue"),
                 ),
               )
               .returning({ sequence: metadataSchema.EntitySequence.sequence })
@@ -152,14 +150,14 @@ export const config = {
               .values({
                 sequence: count,
                 entityId: teamId,
-                entityName: Issue._.name,
+                entityName: "Issue",
               })
               .run();
             teamSeqMap[teamId] = count;
           }
         });
 
-        payload.reverse().forEach(({ data }) => {
+        payload.data.reverse().forEach((data) => {
           data.teamNumber = teamSeqMap[data.teamId]!--;
         });
       },

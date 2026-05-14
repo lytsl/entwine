@@ -8,6 +8,8 @@ import orgSchema, {
   type TOrgSyncModel,
 } from "@/db/schema-org";
 import { CudValidationSchema, handleSyncData } from "@/sync/handle-sync-data";
+import { configure } from "arktype/config";
+configure({ onUndeclaredKey: "delete" });
 
 const app = createOrgApp()
   .post("/cud", arktypeValidator("json", CudValidationSchema), async (c) => {
@@ -50,8 +52,10 @@ const app = createOrgApp()
 
       if (data instanceof type.errors) {
         console.error(data.summary);
-        throw data;
+        throw new Error(data.summary);
       }
+
+      console.debug(schema["~standard"], data);
 
       if (action === "insert") {
         const key = `insert-${modelName}`;

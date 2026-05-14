@@ -28,6 +28,10 @@ export interface ZodStoreDef<T extends z.ZodTypeAny = any> {
 
 export type ZodDBSchemaDef = Record<string, ZodStoreDef>;
 
+export type ExtractZodSchemas<T extends ZodDBSchemaDef> = {
+  [K in keyof T]: z.infer<T[K]["schema"]>;
+};
+
 // ── Type Inference Magic ──────────────────────────────────────────────
 
 /**
@@ -90,7 +94,6 @@ export function createLazyIDB<T extends ZodDBSchemaDef>(
         db.objectStoreNames as unknown as Iterable<string>,
       );
 
-      debugger;
       for (const [storeName, storeDef] of Object.entries(schema.stores)) {
         let store:
           | ReturnType<typeof db.createObjectStore>

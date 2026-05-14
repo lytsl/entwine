@@ -4,7 +4,7 @@ import type { ZodDBSchemaDef } from "../idb-wrapper";
 export const idbSchema = {
   Issue: {
     schema: z.object({
-      assigneeId: z.string(),
+      assigneeId: z.string().nullable(),
       createdAt: z.coerce.date(),
       description: z.string(),
       dueDate: z.coerce.date().nullable(),

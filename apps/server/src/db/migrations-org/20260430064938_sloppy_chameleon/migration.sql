@@ -7,7 +7,7 @@ CREATE TABLE `issue` (
 	`team_id` text NOT NULL,
 	`team_number` integer NOT NULL,
 	`status_id` text NOT NULL,
-	`assignee_id` text NOT NULL,
+	`assignee_id` text,
 	`priority` integer NOT NULL,
 	`labels` text,
 	`project_id` text,
