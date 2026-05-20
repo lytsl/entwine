@@ -1,510 +1,478 @@
 {
-  "version": "7",
-  "dialect": "sqlite",
-  "id": "c5f29ea7-333c-4319-be8e-b62709b29cbb",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
-  "ddl": [
-    {
-      "name": "issue",
-      "entityType": "tables"
-    },
-    {
-      "name": "issue_status",
-      "entityType": "tables"
-    },
-    {
-      "name": "project",
-      "entityType": "tables"
-    },
-    {
-      "name": "entity_sequence",
-      "entityType": "tables"
-    },
-    {
-      "name": "sync",
-      "entityType": "tables"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "id",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "title",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "description",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": "(cast(unixepoch('subsecond') * 1000 as integer))",
-      "generated": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": "(cast(unixepoch('subsecond') * 1000 as integer))",
-      "generated": null,
-      "name": "updated_at",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "team_id",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "team_number",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "status_id",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "assignee_id",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "priority",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "labels",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "project_id",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "parent_id",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "rank",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "due_date",
-      "entityType": "columns",
-      "table": "issue"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "id",
-      "entityType": "columns",
-      "table": "issue_status"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "name",
-      "entityType": "columns",
-      "table": "issue_status"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "description",
-      "entityType": "columns",
-      "table": "issue_status"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "type",
-      "entityType": "columns",
-      "table": "issue_status"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": "false",
-      "generated": null,
-      "name": "indefinite",
-      "entityType": "columns",
-      "table": "issue_status"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "id",
-      "entityType": "columns",
-      "table": "project"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "name",
-      "entityType": "columns",
-      "table": "project"
-    },
-    {
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "description",
-      "entityType": "columns",
-      "table": "project"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "entity_name",
-      "entityType": "columns",
-      "table": "entity_sequence"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "entity_id",
-      "entityType": "columns",
-      "table": "entity_sequence"
-    },
-    {
-      "type": "integer",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "sequence",
-      "entityType": "columns",
-      "table": "entity_sequence"
-    },
-    {
-      "type": "integer",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "id",
-      "entityType": "columns",
-      "table": "sync"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "model_name",
-      "entityType": "columns",
-      "table": "sync"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "model_id",
-      "entityType": "columns",
-      "table": "sync"
-    },
-    {
-      "type": "text",
-      "notNull": true,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "name": "action",
-      "entityType": "columns",
-      "table": "sync"
-    },
-    {
-      "columns": [
-        "status_id"
-      ],
-      "tableTo": "issue_status",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "RESTRICT",
-      "nameExplicit": false,
-      "name": "fk_issue_status_id_issue_status_id_fk",
-      "entityType": "fks",
-      "table": "issue"
-    },
-    {
-      "columns": [
-        "project_id"
-      ],
-      "tableTo": "project",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "nameExplicit": false,
-      "name": "fk_issue_project_id_project_id_fk",
-      "entityType": "fks",
-      "table": "issue"
-    },
-    {
-      "columns": [
-        "parent_id"
-      ],
-      "tableTo": "issue",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "SET NULL",
-      "nameExplicit": true,
-      "name": "issue_parentId_fk",
-      "entityType": "fks",
-      "table": "issue"
-    },
-    {
-      "columns": [
-        "entity_name",
-        "entity_id"
-      ],
-      "nameExplicit": false,
-      "name": "entity_sequence_pk",
-      "entityType": "pks",
-      "table": "entity_sequence"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "issue_pk",
-      "table": "issue",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "issue_status_pk",
-      "table": "issue_status",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "project_pk",
-      "table": "project",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "sync_pk",
-      "table": "sync",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        {
-          "value": "rank",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "issue_rank_idx",
-      "entityType": "indexes",
-      "table": "issue"
-    },
-    {
-      "columns": [
-        {
-          "value": "assignee_id",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "issue_assigneeId_idx",
-      "entityType": "indexes",
-      "table": "issue"
-    },
-    {
-      "columns": [
-        {
-          "value": "team_id",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "issue_teamId_idx",
-      "entityType": "indexes",
-      "table": "issue"
-    },
-    {
-      "columns": [
-        {
-          "value": "model_name",
-          "isExpression": false
-        },
-        {
-          "value": "model_id",
-          "isExpression": false
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "origin": "manual",
-      "name": "sync_model_idx",
-      "entityType": "indexes",
-      "table": "sync"
-    },
-    {
-      "columns": [
-        "team_id",
-        "team_number"
-      ],
-      "nameExplicit": false,
-      "name": "issue_team_id_team_number_unique",
-      "entityType": "uniques",
-      "table": "issue"
-    },
-    {
-      "columns": [
-        "name"
-      ],
-      "nameExplicit": false,
-      "name": "issue_status_name_unique",
-      "entityType": "uniques",
-      "table": "issue_status"
-    },
-    {
-      "columns": [
-        "name"
-      ],
-      "nameExplicit": false,
-      "name": "project_name_unique",
-      "entityType": "uniques",
-      "table": "project"
-    }
-  ],
-  "renames": []
+	"version": "7",
+	"dialect": "sqlite",
+	"id": "c5f29ea7-333c-4319-be8e-b62709b29cbb",
+	"prevIds": ["00000000-0000-0000-0000-000000000000"],
+	"ddl": [
+		{
+			"name": "issue",
+			"entityType": "tables"
+		},
+		{
+			"name": "issue_status",
+			"entityType": "tables"
+		},
+		{
+			"name": "project",
+			"entityType": "tables"
+		},
+		{
+			"name": "entity_sequence",
+			"entityType": "tables"
+		},
+		{
+			"name": "sync",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "title",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "description",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(cast(unixepoch('subsecond') * 1000 as integer))",
+			"generated": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(cast(unixepoch('subsecond') * 1000 as integer))",
+			"generated": null,
+			"name": "updated_at",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "team_id",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "team_number",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "status_id",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "assignee_id",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "priority",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "labels",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "project_id",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "parent_id",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "rank",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "integer",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "due_date",
+			"entityType": "columns",
+			"table": "issue"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"entityType": "columns",
+			"table": "issue_status"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "name",
+			"entityType": "columns",
+			"table": "issue_status"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "description",
+			"entityType": "columns",
+			"table": "issue_status"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "type",
+			"entityType": "columns",
+			"table": "issue_status"
+		},
+		{
+			"type": "integer",
+			"notNull": false,
+			"autoincrement": false,
+			"default": "false",
+			"generated": null,
+			"name": "indefinite",
+			"entityType": "columns",
+			"table": "issue_status"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"entityType": "columns",
+			"table": "project"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "name",
+			"entityType": "columns",
+			"table": "project"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "description",
+			"entityType": "columns",
+			"table": "project"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "entity_name",
+			"entityType": "columns",
+			"table": "entity_sequence"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "entity_id",
+			"entityType": "columns",
+			"table": "entity_sequence"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "sequence",
+			"entityType": "columns",
+			"table": "entity_sequence"
+		},
+		{
+			"type": "integer",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"entityType": "columns",
+			"table": "sync"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "model_name",
+			"entityType": "columns",
+			"table": "sync"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "model_id",
+			"entityType": "columns",
+			"table": "sync"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "action",
+			"entityType": "columns",
+			"table": "sync"
+		},
+		{
+			"columns": ["status_id"],
+			"tableTo": "issue_status",
+			"columnsTo": ["id"],
+			"onUpdate": "NO ACTION",
+			"onDelete": "RESTRICT",
+			"nameExplicit": false,
+			"name": "fk_issue_status_id_issue_status_id_fk",
+			"entityType": "fks",
+			"table": "issue"
+		},
+		{
+			"columns": ["project_id"],
+			"tableTo": "project",
+			"columnsTo": ["id"],
+			"onUpdate": "NO ACTION",
+			"onDelete": "SET NULL",
+			"nameExplicit": false,
+			"name": "fk_issue_project_id_project_id_fk",
+			"entityType": "fks",
+			"table": "issue"
+		},
+		{
+			"columns": ["parent_id"],
+			"tableTo": "issue",
+			"columnsTo": ["id"],
+			"onUpdate": "NO ACTION",
+			"onDelete": "SET NULL",
+			"nameExplicit": true,
+			"name": "issue_parentId_fk",
+			"entityType": "fks",
+			"table": "issue"
+		},
+		{
+			"columns": ["entity_name", "entity_id"],
+			"nameExplicit": false,
+			"name": "entity_sequence_pk",
+			"entityType": "pks",
+			"table": "entity_sequence"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "issue_pk",
+			"table": "issue",
+			"entityType": "pks"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "issue_status_pk",
+			"table": "issue_status",
+			"entityType": "pks"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "project_pk",
+			"table": "project",
+			"entityType": "pks"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "sync_pk",
+			"table": "sync",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				{
+					"value": "rank",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "issue_rank_idx",
+			"entityType": "indexes",
+			"table": "issue"
+		},
+		{
+			"columns": [
+				{
+					"value": "assignee_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "issue_assigneeId_idx",
+			"entityType": "indexes",
+			"table": "issue"
+		},
+		{
+			"columns": [
+				{
+					"value": "team_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "issue_teamId_idx",
+			"entityType": "indexes",
+			"table": "issue"
+		},
+		{
+			"columns": [
+				{
+					"value": "model_name",
+					"isExpression": false
+				},
+				{
+					"value": "model_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "sync_model_idx",
+			"entityType": "indexes",
+			"table": "sync"
+		},
+		{
+			"columns": ["team_id", "team_number"],
+			"nameExplicit": false,
+			"name": "issue_team_id_team_number_unique",
+			"entityType": "uniques",
+			"table": "issue"
+		},
+		{
+			"columns": ["name"],
+			"nameExplicit": false,
+			"name": "issue_status_name_unique",
+			"entityType": "uniques",
+			"table": "issue_status"
+		},
+		{
+			"columns": ["name"],
+			"nameExplicit": false,
+			"name": "project_name_unique",
+			"entityType": "uniques",
+			"table": "project"
+		}
+	],
+	"renames": []
 }

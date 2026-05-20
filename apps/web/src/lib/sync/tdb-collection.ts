@@ -61,7 +61,7 @@ export function webSocketCollectionOptions<
 > & {
   utils: WebSocketUtils;
 } {
-  config.apiPath ??= `sync/cud`;
+  config.apiPath ??= "sync/cud";
   const apiPath = config.apiPath!;
   const lastSyncId = new Store(0);
   const db = config.db;

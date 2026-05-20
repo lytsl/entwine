@@ -2,22 +2,22 @@ import { create } from "zustand";
 import type { IssueStatus } from "@/mock-data/status";
 
 interface CreateIssueState {
-  isOpen: boolean;
-  defaultStatus: IssueStatus | null;
+	isOpen: boolean;
+	defaultStatus: IssueStatus | null;
 
-  // Actions
-  openModal: (status?: IssueStatus) => void;
-  closeModal: () => void;
-  setDefaultStatus: (status: IssueStatus | null) => void;
+	// Actions
+	openModal: (status?: IssueStatus) => void;
+	closeModal: () => void;
+	setDefaultStatus: (status: IssueStatus | null) => void;
 }
 
 export const useCreateIssueStore = create<CreateIssueState>((set) => ({
-  // Initial state
-  isOpen: false,
-  defaultStatus: null,
+	// Initial state
+	isOpen: false,
+	defaultStatus: null,
 
-  // Actions
-  openModal: (status) => set({ isOpen: true, defaultStatus: status || null }),
-  closeModal: () => set({ isOpen: false }),
-  setDefaultStatus: (status) => set({ defaultStatus: status }),
+	// Actions
+	openModal: (status) => set({ isOpen: true, defaultStatus: status || null }),
+	closeModal: () => set({ isOpen: false }),
+	setDefaultStatus: (status) => set({ defaultStatus: status }),
 }));
