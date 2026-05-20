@@ -1,4 +1,4 @@
-import type { Type } from "arktype";
+import type { ZodType } from "zod";
 import type {
   ColumnBaseConfig,
   ColumnBuilderBaseConfig,
@@ -6,9 +6,6 @@ import type {
   ColumnType,
 } from "drizzle-orm";
 import { SQLiteColumn, SQLiteColumnBuilder } from "drizzle-orm/sqlite-core";
-
-import { configure } from "arktype/config";
-configure({ onUndeclaredKey: "delete" });
 
 declare module "drizzle-orm/sqlite-core" {
   interface SQLiteColumnBuilder<
@@ -18,19 +15,22 @@ declare module "drizzle-orm/sqlite-core" {
     TExtraConfig extends ColumnBuilderExtraConfig = object,
   > {
     meta(
-      metadata: { readOnly: true } | { validationSchema: Type } | undefined,
+      metadata: { readOnly: true } | { validationSchema: ZodType } | undefined,
     ): this;
   }
   interface SQLiteColumn<
     T extends ColumnBaseConfig<ColumnType> = ColumnBaseConfig<ColumnType>,
     TRuntimeConfig extends object = {},
   > {
-    readonly meta: { readOnly: true } | { validationSchema: Type } | undefined;
+    readonly meta:
+      | { readOnly: true }
+      | { validationSchema: ZodType }
+      | undefined;
   }
 }
 
 SQLiteColumnBuilder.prototype.meta = function (
-  metadata: { readOnly: true } | { validationSchema: Type } | undefined,
+  metadata: { readOnly: true } | { validationSchema: ZodType } | undefined,
 ) {
   (this as any).config.meta = metadata;
   return this;

@@ -1,22 +1,24 @@
 import type { NonNullableFields } from "@entwine/utility/types";
-import { type } from "arktype";
-import { and, eq, inArray, max, or } from "drizzle-orm";
+import { z } from "zod";
 import type { Context } from "hono";
 import type { BunWebSocketData } from "hono/bun";
 import type { auth } from "@/auth/better-auth";
 import { dbManager } from "@/db/db-manager";
 import orgSchema, { orgSyncModels } from "@/db/schema-org";
+import { SyncActionEnum } from "@/db/schema-org/metadata";
 
-export const CudValidationSchema = type({
-  modelId: "string",
-  modelName: type.enumerated(...orgSyncModels),
-  data: "unknown",
-  action: "'insert' | 'update' | 'delete'",
-})
-  .array()
-  .atLeastLength(1);
+export const CudValidationSchema = z
+  .array(
+    z.object({
+      modelId: z.string(),
+      modelName: z.enum(orgSyncModels),
+      data: z.unknown(),
+      action: z.enum(SyncActionEnum),
+    }),
+  )
+  .min(1);
 
-type TCudPayload = typeof CudValidationSchema.inferOut;
+type TCudPayload = z.output<typeof CudValidationSchema>;
 type TItemPayload = TCudPayload[number];
 type TGroupKeys = `${TItemPayload["action"]}-${TItemPayload["modelName"]}`;
 

@@ -23,6 +23,7 @@ interface GroupIssuesProps {
 export function GroupIssues({ issueStatus, data, count }: GroupIssuesProps) {
   const { viewType } = useViewStore();
   const isViewTypeGrid = viewType === "grid";
+
   const { openModal } = useCreateIssueStore();
 
   const statusTheme = IssueStatusTypeMap[issueStatus.type];
@@ -73,7 +74,7 @@ export function GroupIssues({ issueStatus, data, count }: GroupIssuesProps) {
         </div>
       </div>
 
-      {viewType === "list" ? (
+      {!isViewTypeGrid ? (
         <div className="space-y-0">
           {data.map((itemData) => (
             <IssueLine {...itemData} key={itemData.issue.id} layoutId={true} />

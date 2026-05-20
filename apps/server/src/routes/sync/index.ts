@@ -1,6 +1,5 @@
-import { arktypeValidator } from "@hono/arktype-validator";
-import { type } from "arktype";
-import { and, eq, gt, inArray } from "drizzle-orm";
+import { zValidator } from "@hono/zod-validator";
+import { gt, inArray } from "drizzle-orm";
 import { createOrgApp } from "@/auth/org-auth.factory";
 import { dbManager } from "@/db/db-manager";
 import orgSchema, {
@@ -8,11 +7,10 @@ import orgSchema, {
   type TOrgSyncModel,
 } from "@/db/schema-org";
 import { CudValidationSchema, handleSyncData } from "@/sync/handle-sync-data";
-import { configure } from "arktype/config";
-configure({ onUndeclaredKey: "delete" });
+import { z } from "zod";
 
 const app = createOrgApp()
-  .post("/cud", arktypeValidator("json", CudValidationSchema), async (c) => {
+  .post("/cud", zValidator("json", CudValidationSchema), async (c) => {
     const db = await dbManager.getOrgDb(c.get("organization").id);
     const payload = c.req.valid("json");
     const session = c.get("session");
@@ -48,14 +46,7 @@ const app = createOrgApp()
       }
 
       const schema = orgModelConfigs[modelName].schema[action];
-      const data = schema(itemPayload.data);
-
-      if (data instanceof type.errors) {
-        console.error(data.summary);
-        throw new Error(data.summary);
-      }
-
-      console.debug(schema["~standard"], data);
+      const data = schema.parse(itemPayload.data);
 
       if (action === "insert") {
         const key = `insert-${modelName}`;
@@ -173,7 +164,12 @@ const app = createOrgApp()
   })
   .get(
     "/delta",
-    arktypeValidator("query", type({ lastSyncId: "string.integer.parse" })),
+    zValidator(
+      "query",
+      z.object({
+        lastSyncId: z.coerce.number().int(),
+      }),
+    ),
     async (c) => {
       const db = await dbManager.getOrgDb(c.get("organization").id);
       let { lastSyncId } = c.req.valid("query");

@@ -10,7 +10,6 @@ import mainRelations from "./schema-main/relations";
 import orgSchema, { orgRelations } from "./schema-org";
 import { createDrizzleExtension } from "./utils/sync-extension";
 import { IssueStatusType } from "./schema-org/issue";
-import { notInArray } from "drizzle-orm/singlestore-core/expressions";
 import { inArray } from "drizzle-orm";
 import { SyncActionEnum } from "./schema-org/metadata";
 

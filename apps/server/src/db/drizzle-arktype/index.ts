@@ -1,38 +1,37 @@
 import "./extend-drizzle";
 
-import { type Type, type } from "arktype";
-// import { getColumns } from '~/utils.ts';
-// import { isWithEnum } from '../utils.ts';
-// import { columnToSchema } from './column.ts';
-// import type { Conditions } from './schema.types.internal.ts';
 import type {
-  Conditions,
   CreateInsertSchema,
+  CreateSchemaFactoryOptions,
   CreateSelectSchema,
   CreateUpdateSchema,
-} from "drizzle-orm/arktype";
-import { columnToSchema } from "drizzle-orm/arktype/column";
+  Conditions,
+} from "drizzle-orm/zod";
+import { columnToSchema } from "drizzle-orm/zod/column";
 import { Column } from "drizzle-orm/column";
 import { is } from "drizzle-orm/entity";
-import type { PgEnum } from "drizzle-orm/pg-core";
-// import { Column } from '~/column.ts';
-// import { is } from '~/entity.ts';
-// import type { PgEnum } from '~/pg-core/columns/enum.ts';
+import { isPgEnum, type PgEnum } from "drizzle-orm/pg-core";
 import { isView, SQL, type View } from "drizzle-orm/sql";
 import { isTable, type Table } from "drizzle-orm/table";
-import { getColumns, isWithEnum } from "drizzle-orm/utils";
-
-import { configure } from "arktype/config";
-configure({ onUndeclaredKey: "delete" });
+import { getColumns } from "drizzle-orm/utils";
+import { z } from "zod";
 
 function handleColumns(
   columns: Record<string, any>,
-  // refinements: Record<string, any>,
+  refinements: Record<string, any>,
   conditions: Conditions,
-): Type {
-  const columnSchemas: Record<string, Type> = {};
+  factory?: CreateSchemaFactoryOptions<
+    | Partial<Record<"bigint" | "boolean" | "date" | "number" | "string", true>>
+    | true
+    | undefined
+  >,
+): z.ZodType {
+  const columnSchemas: Record<string, z.ZodType> = {};
 
   for (const [key, selected] of Object.entries(columns)) {
+    const { validationSchema, readOnly } = selected?.config?.meta || {};
+    if (validationSchema) refinements[key] ??= validationSchema;
+
     if (
       !is(selected, Column) &&
       !is(selected, SQL) &&
@@ -43,106 +42,153 @@ function handleColumns(
         isTable(selected) || isView(selected) ? getColumns(selected) : selected;
       columnSchemas[key] = handleColumns(
         columns,
-        // refinements[key] ?? {},
+        refinements[key] ?? {},
         conditions,
+        factory,
       );
       continue;
     }
 
-    // const refinement = refinements[key];
-    const refinement = selected?.config?.meta?.validationSchema;
-    if (
-      refinement !== undefined &&
-      (typeof refinement !== "function" ||
-        (typeof refinement === "function" &&
-          refinement.expression !== undefined))
-    ) {
+    const refinement = refinements[key];
+    if (refinement !== undefined && typeof refinement !== "function") {
       columnSchemas[key] = refinement;
       continue;
     }
 
     const column = is(selected, Column) ? selected : undefined;
-    const schema = column ? columnToSchema(column) : type.unknown;
+    const schema = column ? columnToSchema(column, factory) : z.any();
     const refined =
       typeof refinement === "function" ? refinement(schema) : schema;
 
-    if (conditions.never(column) || selected?.config?.meta?.readOnly) {
+    if (readOnly || conditions.never(column)) {
       continue;
+    } else {
+      columnSchemas[key] = refined;
     }
-    columnSchemas[key] = refined;
 
     if (column) {
       if (conditions.nullable(column)) {
-        columnSchemas[key] = columnSchemas[key]!.or(type.null);
+        columnSchemas[key] = columnSchemas[key]!.nullable();
       }
 
       if (conditions.optional(column)) {
-        columnSchemas[key] = columnSchemas[key]!.optional() as any;
+        columnSchemas[key] = columnSchemas[key]!.optional();
       }
     }
   }
 
-  console.log(columnSchemas);
-  return type(columnSchemas);
+  return z.object(columnSchemas) as any;
 }
 
-export const createSelectSchema = ((
+function handleEnum(
+  enum_: PgEnum<any>,
+  factory?: CreateSchemaFactoryOptions<
+    | Partial<Record<"bigint" | "boolean" | "date" | "number" | "string", true>>
+    | true
+    | undefined
+  >,
+) {
+  const zod: typeof z = factory?.zodInstance ?? z;
+  return zod.enum(enum_.enumValues);
+}
+
+const selectConditions: Conditions = {
+  never: () => false,
+  optional: () => false,
+  nullable: (column) => !column.notNull,
+};
+
+const insertConditions: Conditions = {
+  never: (column) =>
+    column?.generated?.type === "always" ||
+    column?.generatedIdentity?.type === "always",
+  optional: (column) =>
+    !column.notNull || (column.notNull && column.hasDefault),
+  nullable: (column) => !column.notNull,
+};
+
+const updateConditions: Conditions = {
+  never: (column) =>
+    column?.generated?.type === "always" ||
+    column?.generatedIdentity?.type === "always",
+  optional: () => true,
+  nullable: (column) => !column.notNull,
+};
+
+export const createSelectSchema: CreateSelectSchema<undefined> = (
   entity: Table | View | PgEnum<[string, ...string[]]>,
-  // refine?: Record<string, any>,
+  refine?: Record<string, any>,
 ) => {
-  if (isWithEnum(entity)) {
-    return type.enumerated(...entity.enumValues);
+  if (isPgEnum(entity)) {
+    return handleEnum(entity);
   }
   const columns = getColumns(entity);
-  return handleColumns(
-    columns,
-    // refine ?? {},
-    {
-      never: () => false,
-      optional: () => false,
-      nullable: (column) => !column.notNull,
-    },
-  ) as any;
-}) as CreateSelectSchema;
+  return handleColumns(columns, refine ?? {}, selectConditions) as any;
+};
 
-export const createInsertSchema = ((
+export const createInsertSchema: CreateInsertSchema<undefined> = (
   entity: Table,
-  // refine?: Record<string, any>,
+  refine?: Record<string, any>,
 ) => {
   const columns = getColumns(entity);
+  return handleColumns(columns, refine ?? {}, insertConditions) as any;
+};
 
-  return handleColumns(
-    columns,
-    // refine ?? {},
-    {
-      never: (column) =>
-        column?.generated?.type === "always" ||
-        column?.generatedIdentity?.type === "always" ||
-        ("identity" in (column ?? {}) &&
-          typeof (column as any)?.identity !== "undefined"),
-      optional: (column) =>
-        !column.notNull || (column.notNull && column.hasDefault),
-      nullable: (column) => !column.notNull,
-    },
-  ) as any;
-}) as CreateInsertSchema;
-
-export const createUpdateSchema = ((
+export const createUpdateSchema: CreateUpdateSchema<undefined> = (
   entity: Table,
-  // refine?: Record<string, any>,
+  refine?: Record<string, any>,
 ) => {
   const columns = getColumns(entity);
-  return handleColumns(
-    columns,
-    // refine ?? {},
-    {
-      never: (column) =>
-        column?.generated?.type === "always" ||
-        column?.generatedIdentity?.type === "always" ||
-        ("identity" in (column ?? {}) &&
-          typeof (column as any)?.identity !== "undefined"),
-      optional: () => true,
-      nullable: (column) => !column.notNull,
-    },
-  ) as any;
-}) as CreateUpdateSchema;
+  return handleColumns(columns, refine ?? {}, updateConditions) as any;
+};
+
+export function createSchemaFactory<
+  TCoerce extends
+    | Partial<Record<"bigint" | "boolean" | "date" | "number" | "string", true>>
+    | true
+    | undefined,
+>(options?: CreateSchemaFactoryOptions<TCoerce>) {
+  const createSelectSchema: CreateSelectSchema<TCoerce> = (
+    entity: Table | View | PgEnum<[string, ...string[]]>,
+    refine?: Record<string, any>,
+  ) => {
+    if (isPgEnum(entity)) {
+      return handleEnum(entity, options);
+    }
+    const columns = getColumns(entity);
+    return handleColumns(
+      columns,
+      refine ?? {},
+      selectConditions,
+      options,
+    ) as any;
+  };
+
+  const createInsertSchema: CreateInsertSchema<TCoerce> = (
+    entity: Table,
+    refine?: Record<string, any>,
+  ) => {
+    const columns = getColumns(entity);
+    return handleColumns(
+      columns,
+      refine ?? {},
+      insertConditions,
+      options,
+    ) as any;
+  };
+
+  const createUpdateSchema: CreateUpdateSchema<TCoerce> = (
+    entity: Table,
+    refine?: Record<string, any>,
+  ) => {
+    const columns = getColumns(entity);
+    return handleColumns(
+      columns,
+      refine ?? {},
+      updateConditions,
+      options,
+    ) as any;
+  };
+
+  return { createSelectSchema, createInsertSchema, createUpdateSchema };
+}

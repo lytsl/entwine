@@ -25,6 +25,7 @@ export default function AllIssues() {
 
   const isSearching = isSearchOpen && searchQuery.trim() !== "";
   const isViewTypeGrid = viewType === "grid";
+
   const isFiltering = hasActiveFilters();
 
   return (
@@ -112,6 +113,7 @@ const FilteredIssuesView: FC<{
               issueStatus={status}
               data={data || []}
               count={data?.length || 0}
+              isViewTypeGrid={isViewTypeGrid}
             />
           );
         })}
@@ -142,8 +144,6 @@ const GroupIssuesListView: FC<{
     Object.groupBy(issueQuery.data, (d) => d.issue.statusId),
   );
 
-  console.log("GroupIssuesListView queryData", issueQuery);
-
   return (
     <DndProvider backend={HTML5Backend}>
       <CustomDragLayer />
@@ -162,6 +162,7 @@ const GroupIssuesListView: FC<{
               issueStatus={status}
               data={data || []}
               count={data?.length || 0}
+              isViewTypeGrid={isViewTypeGrid}
             />
           );
         })}

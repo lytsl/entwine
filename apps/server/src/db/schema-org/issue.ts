@@ -1,4 +1,4 @@
-import { type } from "arktype";
+import { z } from "zod";
 import { and, defineRelations, eq, sql } from "drizzle-orm";
 import {
   foreignKey,
@@ -32,12 +32,8 @@ export const Issue = sqliteTable(
   "issue",
   {
     id: text("id").primaryKey().notNull(),
-    title: text()
-      .notNull()
-      .meta({ validationSchema: type("string.trim") }),
-    description: text()
-      .notNull()
-      .meta({ validationSchema: type("string.trim") }),
+    title: text().notNull().meta({ validationSchema: z.string().trim() }),
+    description: text().notNull().meta({ validationSchema: z.string().trim() }),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull()
@@ -55,9 +51,9 @@ export const Issue = sqliteTable(
     assigneeId: text("assignee_id"),
     priority: integer()
       .notNull()
-      .meta({ validationSchema: type.valueOf(IssuePriority) }),
+      .meta({ validationSchema: z.enum(IssuePriority) }),
     labels: customJson<string[]>("labels").meta({
-      validationSchema: type("string[]"),
+      validationSchema: z.string().array(),
     }),
     projectId: text("project_id").references(() => Project.id, {
       onDelete: "set null",
@@ -85,14 +81,11 @@ export const IssueStatus = sqliteTable("issue_status", {
     .primaryKey()
     .notNull()
     .$defaultFn(() => crypto.randomUUID()),
-  name: text()
-    .notNull()
-    .unique()
-    .meta({ validationSchema: type("string.trim") }),
-  description: text().meta({ validationSchema: type("string.trim") }),
+  name: text().notNull().unique().meta({ validationSchema: z.string().trim() }),
+  description: text().meta({ validationSchema: z.string().trim() }),
   type: text()
     .notNull()
-    .meta({ validationSchema: type.enumerated(IssueStatusType) }),
+    .meta({ validationSchema: z.enum(IssueStatusType) }),
   indefinite: integer({ mode: "boolean" })
     .default(false)
     .meta({ readOnly: true }),
@@ -100,11 +93,8 @@ export const IssueStatus = sqliteTable("issue_status", {
 
 export const Project = sqliteTable("project", {
   id: text("id").primaryKey().notNull(),
-  name: text()
-    .notNull()
-    .unique()
-    .meta({ validationSchema: type("string.trim") }),
-  description: text().meta({ validationSchema: type("string.trim") }),
+  name: text().notNull().unique().meta({ validationSchema: z.string().trim() }),
+  description: text().meta({ validationSchema: z.string().trim() }),
 });
 
 const schema = {

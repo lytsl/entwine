@@ -19,10 +19,9 @@ export const Sync = sqliteTable(
     modelName: text("model_name").notNull(),
     modelId: text("model_id").notNull(),
     action: text("action", {
-      enum: [
-        SyncActionEnum.Insert,
-        SyncActionEnum.Update,
-        SyncActionEnum.Delete,
+      enum: Object.values(SyncActionEnum) as [
+        SyncActionEnum,
+        ...SyncActionEnum[],
       ],
     }).notNull(),
   },

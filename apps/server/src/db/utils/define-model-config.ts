@@ -1,5 +1,5 @@
 import type { NonNullableFields } from "@entwine/utility/types";
-import type { Type } from "arktype";
+import type { ZodType } from "zod";
 import type { InferInsertModel, SQL } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import type { auth } from "@/auth/better-auth";
@@ -99,9 +99,9 @@ export interface ModelOptions<T extends SQLiteTable> {
 export interface ModelConfigReturn<TTable extends SQLiteTable> {
   table: TTable;
   schema: {
-    insert: Type;
-    update: Type;
-    select: Type;
+    insert: ZodType;
+    update: ZodType;
+    select: ZodType;
   };
   filters?: ModelOptions<TTable>["filters"];
   hooks?: ModelOptions<TTable>["hooks"];
