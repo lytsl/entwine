@@ -33,16 +33,16 @@
 		"dotenv": "catalog:",
 		"drizzle-orm": "beta",
 		"hono": "catalog:",
-		"hono-openapi": "^1.2.0",
+		"hono-openapi": "^1.3.0",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@better-auth/cli": "^1.4.18",
+		"@better-auth/cli": "^1.4.21",
 		"@entwine/config": "workspace:*",
 		"@types/bun": "catalog:",
 		"@typescript/native-preview": "catalog:",
 		"drizzle-kit": "beta",
-		"tsdown": "^0.20.1",
+		"tsdown": "^0.20.3",
 		"typescript": "catalog:"
 	}
 }
