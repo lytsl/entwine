@@ -1,0 +1,19 @@
+{
+  "name": "@entwine/e2e",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:e2e": "playwright test -c app",
+    "test:audit": "playwright test -c audit-10k",
+    "test:audit-100k": "playwright test -c audit-100k",
+    "test:a11y-sweep": "playwright test -c a11y-sweep",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@entwine/shared": "workspace:*",
+    "@entwine/sync-engine": "workspace:*",
+    "@playwright/test": "1.63.0"
+  }
+}

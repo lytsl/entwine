@@ -1,0 +1,17 @@
+{
+  "name": "@entwine/integration",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@entwine/backend": "workspace:*",
+    "@entwine/db-collection": "workspace:*",
+    "@entwine/shared": "workspace:*",
+    "@entwine/sync-engine": "workspace:*",
+    "@tanstack/db": "0.11.1"
+  }
+}

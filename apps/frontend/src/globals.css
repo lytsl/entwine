@@ -1,0 +1,9 @@
+/* `@source` makes Tailwind scan the package's class names. */
+@import "@entwine/ui/globals.css";
+@source "../../../packages/ui/src";
+
+html,
+body {
+  height: 100%;
+  font-family: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}

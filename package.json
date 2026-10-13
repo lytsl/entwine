@@ -1,0 +1,42 @@
+{
+  "name": "entwine",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tests/*"
+  ],
+  "scripts": {
+    "dev": "bun scripts/dev.ts",
+    "seed:demo": "bun apps/backend/scripts/seed-demo.ts",
+    "seed:scale": "bun apps/backend/scripts/seed-scale.ts",
+    "build": "bun run --cwd apps/frontend build",
+    "start": "NODE_ENV=production bun apps/backend/src/index.ts",
+    "backup": "bun apps/backend/scripts/backup.ts",
+    "restore": "bun apps/backend/scripts/restore.ts",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
+    "test:e2e": "bun run --cwd tests/e2e test:e2e",
+    "contract:emit": "bun scripts/emit-contract.ts",
+    "storybook": "bun run --cwd packages/ui storybook",
+    "build-storybook": "bun run --cwd packages/ui build-storybook",
+    "test:audit": "bun run --cwd tests/e2e test:audit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@prisma/cli-engine": "0.3.0",
+    "@prisma/orm-sqlite": "8.0.0-rc.9",
+    "@types/bun": "1.4.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "prisma": "8.0.0-rc.13",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "bun": ">=1.2.0"
+  }
+}

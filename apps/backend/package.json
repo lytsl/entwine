@@ -1,0 +1,31 @@
+{
+  "name": "@entwine/backend",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./server": "./src/server.ts"
+  },
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test test"
+  },
+  "dependencies": {
+    "@entwine/shared": "workspace:*",
+    "@entwine/sync-engine": "workspace:*",
+    "@prisma/orm-sqlite": "8.0.0-rc.9",
+    "@react-email/components": "1.0.12",
+    "better-auth": "1.7.5",
+    "hono": "4.13.7",
+    "nodemailer": "10.0.13",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "web-push": "3.6.7",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/web-push": "3.6.4"
+  }
+}

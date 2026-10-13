@@ -1,0 +1,20 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-vega",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../../packages/ui/src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@entwine/ui/components",
+    "ui": "@entwine/ui/components/ui",
+    "utils": "@entwine/ui/lib/utils",
+    "lib": "@entwine/ui/lib",
+    "hooks": "@entwine/ui/hooks"
+  }
+}

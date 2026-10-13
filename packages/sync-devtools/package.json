@@ -1,0 +1,20 @@
+{
+  "name": "@entwine/sync-devtools",
+  "license": "AGPL-3.0-only",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@entwine/db-collection": "workspace:*",
+    "@tanstack/react-devtools": "0.10.13"
+  },
+  "peerDependencies": {
+    "react": "19.2.6"
+  }
+}

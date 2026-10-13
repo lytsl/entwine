@@ -1,0 +1,4 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["app", "audit-10k", "audit-100k", "a11y-sweep", "helpers"]
+}

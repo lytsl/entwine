@@ -1,0 +1,18 @@
+services:
+  entwine:
+    build: .
+    restart: unless-stopped
+    # Passes the stop signal on, so a stop does not wait out its timeout.
+    init: true
+    ports:
+      - "3000:3000"
+    # Settings, one NAME=value a line; the README lists them. None is required.
+    env_file:
+      - path: .env
+        required: false
+    # Docker's own volume, not a folder of the host: the databases are the server's alone to open.
+    volumes:
+      - data:/app/data
+
+volumes:
+  data:

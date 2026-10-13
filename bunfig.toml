@@ -1,0 +1,3 @@
+[test]
+# Playwright runs tests/e2e; bun test would collect its *.spec.ts files too and fail them on load.
+pathIgnorePatterns = ["tests/e2e/**"]

@@ -1,0 +1,23 @@
+{
+  "name": "@entwine/db-collection",
+  "license": "AGPL-3.0-only",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@entwine/sync-engine": "workspace:*",
+    "@tanstack/browser-db-sqlite-persistence": "0.2.26",
+    "@tanstack/db": "0.11.1",
+    "@tanstack/react-db": "0.5.1"
+  },
+  "peerDependencies": {
+    "react": "19.2.6"
+  }
+}

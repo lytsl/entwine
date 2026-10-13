@@ -1,0 +1,323 @@
+// use prisma-next
+//
+// One workspace's tracker data. Each workspace has its own SQLite file built from this contract, so no table
+// carries a workspace id. Accounts, sessions, workspaces and memberships live in Better Auth's database; `Member`
+// mirrors the members this workspace needs to name.
+//
+// SQLite in Prisma Next has no Boolean and rejects autoincrement: flags are Int (0/1), timestamps are Int epoch
+// milliseconds, and `Change.id` is assigned by the tenant's write queue.
+
+model Member {
+  id      String  @id
+  name    String
+  email   String
+  image   String?
+  role    String
+  removed Int     @default(0)
+}
+
+// One row, under the workspace's id: what the auth database says of the workspace, for its members' tabs to follow.
+model Workspace {
+  id   String @id
+  name String
+}
+
+model Project {
+  id              String @id
+  name            String
+  identifier      String @unique
+  description     String @default("")
+  lastIssueNumber Int    @default(0)
+  defaultStateId  String @default("")
+  archivedAt      Int?
+  // The cycle schedule; no schedule without `cycleWeeks`. `cycleStartDay` is 0 for Sunday.
+  cycleWeeks      Int?
+  cycleStartDay   Int    @default(1)
+  cycleUpcoming   Int    @default(2)
+  cycleRollover   Int    @default(0)
+  cycleTimezone   String @default("UTC")
+  createdAt       Int
+  updatedAt       Int
+}
+
+model State {
+  id        String  @id
+  projectId String
+  name      String
+  color     String
+  group     String
+  position  Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Label {
+  id        String @id
+  name      String
+  nameKey   String @unique
+  color     String
+  createdAt Int
+}
+
+model Issue {
+  id          String  @id
+  projectId   String
+  number      Int
+  title       String
+  description String  @default("")
+  stateId     String
+  priority    String  @default("none")
+  assigneeId  String?
+  creatorId   String
+  parentId    String?
+  startDate   String?
+  dueDate     String?
+  estimate    Int?
+  cycleId     String?
+  archivedAt  Int?
+  createdAt   Int
+  updatedAt   Int
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  state       State   @relation(fields: [stateId], references: [id])
+  assignee    Member? @relation("assignee", fields: [assigneeId], references: [id])
+  creator     Member  @relation("creator", fields: [creatorId], references: [id])
+  parent      Issue?  @relation("parent", fields: [parentId], references: [id])
+  cycle       Cycle?  @relation(fields: [cycleId], references: [id])
+
+  @@index([projectId, stateId])
+  @@index([assigneeId])
+  @@index([parentId])
+  @@index([cycleId])
+}
+
+model IssueLabel {
+  id      String @id
+  issueId String
+  labelId String
+  issue   Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  label   Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([labelId])
+}
+
+// One relation per pair of issues: the id is the two issue ids, sorted. `blocks` reads "issueId blocks relatedId";
+// `relates_to` and `duplicate` are symmetric.
+model IssueRelation {
+  id        String @id
+  issueId   String
+  relatedId String
+  type      String
+  createdAt Int
+  issue     Issue  @relation("relationFrom", fields: [issueId], references: [id], onDelete: Cascade)
+  related   Issue  @relation("relationTo", fields: [relatedId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([relatedId])
+}
+
+model IssueLink {
+  id        String @id
+  issueId   String
+  url       String
+  title     String @default("")
+  creatorId String
+  createdAt Int
+  issue     Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  creator   Member @relation(fields: [creatorId], references: [id])
+
+  @@index([issueId])
+}
+
+// A project's time window, from `startDate` through `endDate` (ISO calendar dates). Whether it is upcoming, current or
+// past follows from the viewer's date, so nothing stores it. An issue is in at most one cycle: `Issue.cycleId`.
+// A cycle the server created from the project's schedule has no creator.
+model Cycle {
+  id          String  @id
+  projectId   String
+  name        String
+  description String  @default("")
+  startDate   String
+  endDate     String
+  creatorId   String?
+  rolledIssues Int    @default(0)
+  rolledPoints Int    @default(0)
+  createdAt   Int
+  updatedAt   Int
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator     Member? @relation(fields: [creatorId], references: [id])
+
+  @@index([projectId])
+}
+
+// A project's deliverable. Members set its status; it is not derived from its issues' progress.
+model Module {
+  id          String  @id
+  projectId   String
+  name        String
+  description String  @default("")
+  status      String  @default("backlog")
+  startDate   String?
+  targetDate  String?
+  leadId      String?
+  creatorId   String
+  createdAt   Int
+  updatedAt   Int
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  lead        Member? @relation("lead", fields: [leadId], references: [id])
+  creator     Member  @relation("moduleCreator", fields: [creatorId], references: [id])
+
+  @@index([projectId])
+}
+
+// A workspace member who works on a module. The id is moduleId:memberId, so a member is in a module at most once.
+model ModuleMember {
+  id       String @id
+  moduleId String
+  memberId String
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  member   Member @relation(fields: [memberId], references: [id])
+
+  @@index([moduleId])
+}
+
+// An issue in a module. The id is issueId:moduleId, so an issue joins a module at most once.
+model IssueModule {
+  id       String @id
+  issueId  String
+  moduleId String
+  issue    Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([moduleId])
+}
+
+// A saved view of a project's issues, or of all issues when `projectId` is null. `query` is an IssueQuery as JSON.
+model View {
+  id        String   @id
+  name      String
+  projectId String?
+  query     String
+  creatorId String
+  createdAt Int
+  updatedAt Int
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator   Member   @relation(fields: [creatorId], references: [id])
+
+  @@index([projectId])
+}
+
+model Comment {
+  id        String  @id
+  issueId   String
+  authorId  String
+  body      String
+  createdAt Int
+  updatedAt Int
+  editedAt  Int?
+  issue     Issue   @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  author    Member  @relation(fields: [authorId], references: [id])
+
+  @@index([issueId])
+}
+
+model Activity {
+  id        String  @id
+  issueId   String
+  // Null for what the server did on its own.
+  actorId   String?
+  field     String
+  oldValue  String?
+  newValue  String?
+  createdAt Int
+  issue     Issue   @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  actor     Member? @relation(fields: [actorId], references: [id])
+
+  @@index([issueId])
+}
+
+// A member's emoji on an issue, or on one of its comments when `commentId` is set. The id is target:userId:emoji, so
+// a member reacts once per emoji per target. `issueId` is always the issue, by which a page loads them.
+model Reaction {
+  id        String   @id
+  issueId   String
+  commentId String?
+  userId    String
+  emoji     String
+  createdAt Int
+  issue     Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      Member   @relation(fields: [userId], references: [id])
+
+  @@index([issueId])
+  @@index([commentId])
+}
+
+// A file attached to an issue. The bytes are on disk beside the tenant file, named by this row's id.
+model Attachment {
+  id         String @id
+  issueId    String
+  name       String
+  size       Int
+  uploaderId String
+  createdAt  Int
+  issue      Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  uploader   Member @relation(fields: [uploaderId], references: [id])
+
+  @@index([issueId])
+}
+
+// A member who follows an issue. The id is issueId:memberId, so a member follows an issue at most once.
+model IssueSubscription {
+  id        String @id
+  issueId   String
+  memberId  String
+  createdAt Int
+  issue     Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  member    Member @relation(fields: [memberId], references: [id])
+
+  @@index([issueId])
+}
+
+// What one member is told of an issue. `memberId` is whom it is for: the sync schema names it as the row's owner, so
+// no other member is sent the row. `readAt` is null until that member has read it.
+model Notification {
+  id        String @id
+  memberId  String
+  issueId   String
+  actorId   String
+  kind      String
+  readAt    Int?
+  createdAt Int
+  member    Member @relation("recipient", fields: [memberId], references: [id])
+  issue     Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  actor     Member @relation("notifier", fields: [actorId], references: [id])
+
+  @@index([memberId])
+  @@index([issueId])
+}
+
+// The sync engine's tables, which it requires in every tenant file.
+//
+// The change log: one entry per row a committed write touched, in commit order. `txid` is the client transaction
+// that wrote it, so a retried transaction is answered from the log instead of applied twice. `createdAt` is the
+// commit's time, by which old entries are pruned.
+model Change {
+  before Json?
+  actorId String?
+  id        Int     @id
+  model     String
+  rowId     String
+  data      Json?
+  txid      String?
+  createdAt Int
+
+  @@index([txid])
+}
+
+// One row, created with the file: identifies this change log, so a cursor from a rebuilt file is recognized.
+model Epoch {
+  id String @id
+}
